@@ -1,0 +1,30 @@
+{
+  "name": "s81-1225-sparks-nextjs-aws-rentels",
+  "version": "1.0.0",
+  "description": "This project demonstrates **Static Rendering (SSG)**, **Dynamic Rendering (SSR)**, and **Hybrid Rendering (ISR)** using the **Next.js App Router**. The goal is to understand when to use each strategy, how caching and revalidation work, and how these choices impact performance, cost, and scalability in real-world applications.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build:staging": "env-cmd -f .env.staging next build",
+    "build:production": "env-cmd -f .env.production next build",
+    "start": "next start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kalviumcommunity/S81-1225-Sparks-Nextjs-aws-Rentels.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/kalviumcommunity/S81-1225-Sparks-Nextjs-aws-Rentels/issues"
+  },
+  "homepage": "https://github.com/kalviumcommunity/S81-1225-Sparks-Nextjs-aws-Rentels#readme",
+  "dependencies": {
+    "env-cmd": "^11.0.0",
+    "next": "^16.0.10",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  }
+}
