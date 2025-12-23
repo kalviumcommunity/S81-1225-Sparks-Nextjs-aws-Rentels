@@ -10,6 +10,11 @@ RUN npm install
 
 # Copy project files and build the app
 COPY . .
+
+# Set production environment inside the container
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
 RUN npm run build
 
 # Expose the app port

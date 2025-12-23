@@ -159,7 +159,7 @@ This project is containerized using Docker and Docker Compose to ensure a consis
 To start all services with a single command, run the following in the root directory:
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 Once running, you can access:
@@ -167,13 +167,29 @@ Once running, you can access:
 - **PostgreSQL**: `localhost:5432`
 - **Redis**: `localhost:6379`
 
+Quick verification commands:
+
+```powershell
+# Show running containers
+docker compose ps
+
+# Check Next.js logs
+docker compose logs app --tail=100
+
+# Ping Redis
+docker exec redis_cache redis-cli PING
+
+# List Postgres databases
+docker exec -it postgres_db psql -U postgres -c "\\l"
+```
+
 ### 🏗️ Service Architecture
 
 The `docker-compose.yml` file defines three core services:
 
 1.  **`app` (Next.js)**:
     - **Build**: Uses the local `Dockerfile`.
-    - **Dockerfile Logic**: Based on `node:20-alpine`. It installs dependencies, copies the source code, builds the production-ready Next.js app, and starts it on port 3000.
+	- **Dockerfile Logic**: Based on `node:20-alpine`. It installs dependencies, copies the source code, sets `NODE_ENV=production`, disables Next telemetry, builds the production-ready Next.js app, and starts it on port 3000.
     - **Dependencies**: Depends on `db` and `redis` to ensure they are started first.
 2.  **`db` (PostgreSQL)**:
     - **Image**: `postgres:15-alpine`.
@@ -188,16 +204,29 @@ The `docker-compose.yml` file defines three core services:
 -   **Networks**: All services are connected via a shared bridge network named `localnet`. This allows the Next.js app to connect to the database using the hostname `db` and to Redis using `redis`.
 -   **Volumes**: The `db_data` volume is mapped to `/var/lib/postgresql/data` inside the PostgreSQL container to persist database records.
 
+Sample logs when everything is running:
+
+```
+nextjs_app   | ▲ Next.js 16.1.0
+nextjs_app   | - Local:         http://localhost:3000
+nextjs_app   | ✓ Ready in 958ms
+postgres_db  | database system is ready to accept connections
+redis_cache  | Ready to accept connections tcp
+```
+
 ### 📝 Reflections & Troubleshooting
 
 #### Issues Faced & Solutions
--   **Project Structure**: Initially, the source code was in a nested subfolder. This caused pathing issues in the Dockerfile. **Solution**: Moved all project files to the root directory to simplify the build context and follow standard practices.
--   **Environment Variables**: The app requires specific variables like `DATABASE_URL` and `REDIS_URL` at runtime. **Solution**: Configured these directly in `docker-compose.yml` to point to the internal container names (`db` and `redis`).
--   **Build Performance**: Large images can be slow to pull and build. **Solution**: Used `alpine` versions of all images (Node, Postgres, Redis) to keep the footprint small and the builds fast. Added a `.dockerignore` file to prevent copying `node_modules` and `.next` folder into the image twice.
+-   **TypeScript build failures (noUnusedLocals)**: `src/app/test-lint.tsx` and an unused env in `layout.tsx` caused `next build` to fail inside Docker. **Fix**: Removed unused variables and console statements so production builds pass.
+-   **Build-time env access**: A build-time check for `DATABASE_URL` in `layout.tsx` crashed SSG during `next build`. **Fix**: Removed the check from build-time code; read envs at runtime in server code instead.
+-   **Compose spec warning**: Docker Compose warned that `version` is obsolete. **Fix**: Removed the `version:` field from `docker-compose.yml` to follow the current spec.
+-   **Environment Variables**: The app requires `DATABASE_URL`, `REDIS_URL`, and public `NEXT_PUBLIC_*` variables. **Fix**: Defined these in `docker-compose.yml` and used container hostnames (`db`, `redis`).
+-   **Build Performance**: Used `-alpine` images and ensured `.dockerignore` excludes `node_modules`, `.next`, etc., to keep the context small and speed up builds.
 
 #### Troubleshooting Tips
 -   **Port Conflicts**: If the build fails with a port error, ensure no other service is using ports 3000, 5432, or 6379 on your host machine.
 -   **Clean Slate**: To reset your environment completely, run:
     ```bash
-    docker-compose down -v --rmi all
+	docker compose down -v --rmi all
     ```
+ -   **Windows-specific**: Ensure Docker Desktop is running with WSL 2 backend; if file sharing prompts appear, allow the project drive. Antivirus or firewall can slow bind mounts; prefer image builds over host mounts for production-like runs.
