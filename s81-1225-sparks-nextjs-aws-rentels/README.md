@@ -34,3 +34,44 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## 🔐 Environment Variable Management
+
+This project uses environment variables to manage configuration and sensitive data securely.
+
+### Environment Files
+
+- `.env.local`  
+  Contains real credentials and secrets.  
+  ❌ Not committed to GitHub.
+
+- `.env.example`  
+  Template file listing all required environment variables with placeholders.  
+  ✅ Committed to GitHub.
+
+### Server-side Variables (Private)
+
+| Variable Name | Purpose |
+|--------------|--------|
+| DATABASE_URL | PostgreSQL database connection string |
+| JWT_SECRET | Used for signing authentication tokens |
+
+These variables are only accessed on the server using `process.env`.
+
+### Client-side Variables (Public)
+
+| Variable Name | Purpose |
+|--------------|--------|
+| NEXT_PUBLIC_API_BASE_URL | Base URL for frontend API calls |
+
+Client-side variables always start with `NEXT_PUBLIC_`.
+
+### Setup Instructions
+
+1. Copy `.env.example` and rename it to `.env.local`
+2. Fill in actual values
+3. Restart the development server
+
+```bash
+cp .env.example .env.local
+npm run dev
