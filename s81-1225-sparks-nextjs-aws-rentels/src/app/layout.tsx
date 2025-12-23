@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,4 +32,10 @@ export default function RootLayout({
       </body>
     </html>
   );
+}
+// Example: API route or server action
+const dbUrl = process.env.DATABASE_URL;
+
+if (!dbUrl) {
+  throw new Error("DATABASE_URL is not defined");
 }
