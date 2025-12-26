@@ -331,6 +331,244 @@ if (process.env.NODE_ENV !== "production") {
 - **Reliability**: schema-driven models keep DB structure and application code in sync.
 - **Productivity**: faster iteration (generate client, write typed queries) and clearer data access patterns.
 
+---
+
+## 🔄 Database Migrations & Seeding
+
+This project uses **Prisma Migrate** for version-controlled database schema changes and a **seed script** for reproducible sample data.
+
+### 📊 Database Schema
+
+The application uses a comprehensive rental platform schema with the following models:
+
+- **User**: Customers, property owners, and admins with role-based access
+- **Property**: Rental listings with details, pricing, and availability
+- **Booking**: Reservation records with dates and status tracking
+- **Payment**: Transaction records linked to bookings
+- **Review**: Property ratings and comments from customers
+- **Amenity**: Property features (WiFi, parking, pool, etc.)
+
+### 🚀 Migration Workflow
+
+#### 1. Start the Database
+
+```powershell
+# Start PostgreSQL via Docker
+docker compose up -d db
+
+# Verify it's running
+docker ps
+```
+
+#### 2. Create Initial Migration
+
+```powershell
+# Generate migration files and apply to database
+npx prisma migrate dev --name init_schema
+```
+
+This command:
+- Creates SQL migration files in `prisma/migrations/`
+- Applies changes to the PostgreSQL database
+- Regenerates Prisma Client with updated types
+
+#### 3. Create Additional Migrations
+
+When you modify `schema.prisma`, create a new migration:
+
+```powershell
+npx prisma migrate dev --name add_new_feature
+```
+
+Each migration is versioned and tracked, ensuring team-wide consistency.
+
+#### 4. View Migration History
+
+```powershell
+# List all migrations
+ls prisma\migrations
+
+# View a specific migration SQL
+cat prisma\migrations\*_init_schema\migration.sql
+```
+
+### 🌱 Seed Script
+
+The seed script (`prisma/seed.ts`) populates the database with realistic sample data for development and testing.
+
+#### Running the Seed
+
+```powershell
+npm run prisma:seed
+```
+
+**What gets seeded:**
+- 5 Users (1 Admin, 2 Property Owners, 2 Customers)
+- 4 Properties with varying details
+- 17 Amenities across properties
+- 3 Bookings in different states
+- 2 Payments
+- 5 Reviews with ratings
+
+#### Idempotency
+
+The seed script uses `upsert` operations, making it safe to run multiple times without creating duplicate data. This is crucial for:
+- Resetting development environments
+- Testing migration rollbacks
+- Onboarding new team members
+
+### 🔙 Rollback & Reset
+
+#### Reset Database (Destructive)
+
+```powershell
+npx prisma migrate reset
+```
+
+This will:
+1. Drop the database
+2. Re-create it
+3. Re-apply all migrations
+4. Re-run the seed script
+
+**Warning:** This destroys all data. Only use in development.
+
+#### Rollback a Single Migration
+
+Prisma doesn't support automatic rollback of individual migrations. To rollback:
+
+1. Manually create a new migration that reverses the changes
+2. Or use `migrate reset` to start fresh
+
+### 🔍 Viewing Data
+
+#### Prisma Studio (Recommended)
+
+```powershell
+npx prisma studio
+```
+
+Opens a visual database browser at `http://localhost:5555` where you can:
+- Browse all tables
+- View relationships
+- Edit data
+- Run queries
+
+#### Direct Database Access
+
+```powershell
+# Connect to PostgreSQL
+docker exec -it postgres_db psql -U postgres -d mydb
+
+# Example query
+SELECT * FROM "User";
+```
+
+### 🛡️ Production Safety Guidelines
+
+Before running migrations in production:
+
+1. **Backup First**: Always create a full database backup
+   ```powershell
+   # Example: pg_dump for PostgreSQL
+   docker exec postgres_db pg_dump -U postgres mydb > backup.sql
+   ```
+
+2. **Test in Staging**: Run migrations in a staging environment that mirrors production
+   ```powershell
+   # Use environment-specific DATABASE_URL
+   DATABASE_URL="postgresql://..." npx prisma migrate deploy
+   ```
+
+3. **Review Migration SQL**: Manually inspect generated SQL for destructive operations
+   ```powershell
+   cat prisma\migrations\*_migration_name\migration.sql
+   ```
+
+4. **Use `migrate deploy` in Production**: Never use `migrate dev` in production
+   ```powershell
+   # Production deployment (no prompts, no seed)
+   npx prisma migrate deploy
+   ```
+
+5. **Plan for Downtime**: Schedule migrations during low-traffic periods
+
+6. **Monitor**: Watch application logs and database metrics during and after migration
+
+7. **Rollback Plan**: Have a tested rollback procedure ready
+   - Keep database backups
+   - Document manual rollback steps
+   - Test rollback in staging first
+
+8. **Data Validation**: Verify data integrity after migration
+   ```sql
+   -- Example: Check for orphaned records
+   SELECT * FROM "Booking" WHERE "propertyId" NOT IN (SELECT id FROM "Property");
+   ```
+
+### 📸 Migration Evidence
+
+Successful migration output:
+
+```
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "mydb" at "localhost:5432"
+
+Applying migration `20251226085208_init_schema`
+
+The following migration(s) have been created and applied:
+
+migrations/
+  └─ 20251226085208_init_schema/
+    └─ migration.sql
+
+Your database is now in sync with your schema.
+
+✔ Generated Prisma Client
+```
+
+Successful seed output:
+
+```
+🌱 Starting database seeding...
+
+👥 Seeding users...
+✅ Users seeded successfully
+
+🏠 Seeding properties...
+✅ Properties seeded successfully
+
+✨ Seeding amenities...
+✅ Amenities seeded successfully
+
+📅 Seeding bookings...
+✅ Bookings seeded successfully
+
+💳 Seeding payments...
+✅ Payments seeded successfully
+
+⭐ Seeding reviews...
+✅ Reviews seeded successfully
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ Database seeding completed successfully!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### 🎯 Quick Reference
+
+| Command | Purpose |
+|---------|---------|
+| `npx prisma generate` | Regenerate Prisma Client after schema changes |
+| `npx prisma migrate dev` | Create and apply migration in development |
+| `npx prisma migrate deploy` | Apply migrations in production |
+| `npx prisma migrate reset` | Reset database and re-run migrations + seed |
+| `npm run prisma:seed` | Run seed script |
+| `npx prisma studio` | Open visual database browser |
+| `npx prisma db push` | Push schema changes without creating migration (dev only) |
+
+---
+
 ### 📝 Reflections & Troubleshooting
 
 #### Issues Faced & Solutions
