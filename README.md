@@ -214,6 +214,123 @@ postgres_db  | database system is ready to accept connections
 redis_cache  | Ready to accept connections tcp
 ```
 
+---
+
+## Prisma ORM (PostgreSQL)
+
+Prisma is the ORM layer for this project. It provides:
+- **Type-safe queries** (generated types from your schema)
+- **Centralized models** in `prisma/schema.prisma`
+- **Consistent DB access** through a shared Prisma Client
+
+### What was added
+- **Schema**: `prisma/schema.prisma`
+- **Prisma config**: `prisma.config.ts` (Prisma v7 uses this for `DATABASE_URL`)
+- **Client singleton**: `src/lib/prisma.ts`
+- **Test query script**: `scripts/test-prisma.mjs`
+
+### Key Prisma v7 notes (important)
+- Prisma v7 no longer supports `url = env("DATABASE_URL")` inside `schema.prisma` for Migrate.
+- The database URL is configured via `prisma.config.ts`.
+- Prisma Client requires a **PostgreSQL adapter** (`@prisma/adapter-pg`) instead of using the connection string directly.
+
+### Setup steps
+From the project root:
+
+```powershell
+npm install
+npx prisma generate
+```
+
+Start Postgres (recommended: Docker Compose) and apply the schema:
+
+```powershell
+# Make sure Docker Desktop is running
+docker compose up -d db
+
+# Create/apply the initial migration
+npx prisma migrate dev --name init
+```
+
+Verify connectivity with a simple query:
+
+```powershell
+npm run prisma:test
+```
+
+Expected success output looks like:
+
+```
+Prisma connection OK. Users: []
+```
+
+If Postgres is not running, you’ll typically see `ECONNREFUSED`.
+
+### Schema snippet
+
+```prisma
+generator client {
+	provider = "prisma-client-js"
+}
+
+datasource db {
+	provider = "postgresql"
+}
+
+model User {
+	id        Int       @id @default(autoincrement())
+	name      String
+	email     String    @unique
+	createdAt DateTime  @default(now())
+	projects  Project[]
+}
+
+model Project {
+	id     Int    @id @default(autoincrement())
+	name   String
+	userId Int
+	user   User   @relation(fields: [userId], references: [id])
+}
+```
+
+### Prisma Client initialization snippet
+
+```ts
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+
+const globalForPrisma = globalThis as unknown as {
+	prisma?: PrismaClient;
+	pgPool?: Pool;
+};
+
+const pgPool =
+	globalForPrisma.pgPool ||
+	new Pool({
+		connectionString: process.env.DATABASE_URL,
+	});
+
+const adapter = new PrismaPg(pgPool);
+
+export const prisma =
+	globalForPrisma.prisma ||
+	new PrismaClient({
+		adapter,
+		log: ["query", "info", "warn", "error"],
+	});
+
+if (process.env.NODE_ENV !== "production") {
+	globalForPrisma.pgPool = pgPool;
+	globalForPrisma.prisma = prisma;
+}
+```
+
+### Reflection
+- **Type safety**: query results and inputs are typed end-to-end, reducing runtime mistakes.
+- **Reliability**: schema-driven models keep DB structure and application code in sync.
+- **Productivity**: faster iteration (generate client, write typed queries) and clearer data access patterns.
+
 ### 📝 Reflections & Troubleshooting
 
 #### Issues Faced & Solutions
