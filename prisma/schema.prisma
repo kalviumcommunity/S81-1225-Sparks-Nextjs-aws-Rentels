@@ -70,6 +70,7 @@ model Property {
   @@index([city])
   @@index([userId])
   @@index([isAvailable])
+  @@index([price])
 }
 
 model Booking {
@@ -89,6 +90,8 @@ model Booking {
   @@index([propertyId])
   @@index([userId])
   @@index([status])
+  @@index([userId, status]) // Composite index for optimization
+  @@index([startDate])
 }
 
 model Payment {
