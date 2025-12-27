@@ -454,6 +454,101 @@ export const ERROR_CODES = {
 
 A single response schema makes frontend integration predictable (no per-route response parsing), speeds up debugging (every error has a stable code + timestamp), and makes it easier to plug into logging/monitoring tools later.
 
+---
+
+## Input Validation with Zod
+
+This project validates **all POST and PUT request bodies** with Zod before touching Prisma. Schemas are shared so they can be reused on both the server (API routes) and the client (forms).
+
+### Shared schema
+
+User schemas live in `src/lib/schemas/userSchema.ts` and export both schemas and types:
+
+```ts
+import { z } from "zod";
+
+export const ROLE_VALUES = ["CUSTOMER", "OWNER", "ADMIN"] as const;
+
+export const userCreateSchema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters long"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email is required")
+    .email("Invalid email address")
+    .transform((value) => value.toLowerCase()),
+  role: z.enum(ROLE_VALUES).optional().nullable(),
+  phone: z.string().trim().optional().nullable(),
+});
+
+export type UserCreateInput = z.infer<typeof userCreateSchema>;
+```
+
+### Applying validation in routes
+
+Example pattern used in `POST /api/users` and `PUT /api/users/:id`:
+
+```ts
+import { ZodError } from "zod";
+import { userCreateSchema, formatZodError } from "@/lib/schemas/userSchema";
+import { sendError, sendSuccess } from "@/lib/responseHandler";
+import { ERROR_CODES } from "@/lib/errorCodes";
+
+try {
+  const body = await req.json();
+  const validated = userCreateSchema.parse(body);
+  return sendSuccess(validated, "Validated", 200);
+} catch (err) {
+  if (err instanceof ZodError) {
+    return sendError("Validation Error", ERROR_CODES.VALIDATION_ERROR, 400, {
+      errors: formatZodError(err),
+    });
+  }
+  return sendError("Unexpected error", ERROR_CODES.INTERNAL_ERROR, 500);
+}
+```
+
+### Passing vs failing examples
+
+Passing request:
+
+```bash
+curl -X POST "http://localhost:3000/api/users" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice","email":"alice@example.com","role":"CUSTOMER"}'
+```
+
+Failing request:
+
+```bash
+curl -X POST "http://localhost:3000/api/users" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"A","email":"bademail"}'
+```
+
+Expected failing response shape:
+
+```json
+{
+  "success": false,
+  "message": "Validation Error",
+  "error": {
+    "code": "E001",
+    "details": {
+      "errors": [
+        { "field": "name", "message": "Name must be at least 2 characters long" },
+        { "field": "email", "message": "Invalid email address" }
+      ]
+    }
+  },
+  "timestamp": "2025-12-27T10:00:00.000Z"
+}
+```
+
+### Reflection (schema reuse + maintainability)
+
+Having a single schema source of truth reduces duplicated validation rules, makes API behavior consistent across endpoints, and helps teams evolve payload requirements safely (schema changes are explicit and type-checked).
+
 ### Schema snippet
 
 ```prisma
