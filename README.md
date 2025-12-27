@@ -300,9 +300,9 @@ This project uses **Next.js App Router file-based routing** for APIs: every `rou
 
 Users are implemented as a RESTful resource with **plural nouns**:
 
-- `GET /api/users` → list users (supports pagination)
+- `GET /api/users` → list users (supports pagination) *(protected: requires JWT)*
 - `POST /api/users` → create user
-- `GET /api/users/:id` → get user by id
+- `GET /api/users/:id` → get user by id *(protected: requires JWT)*
 - `PUT /api/users/:id` → update user by id
 - `PATCH /api/users/:id` → partial update user by id
 - `DELETE /api/users/:id` → delete user by id
@@ -338,7 +338,8 @@ Response shape:
 Example:
 
 ```bash
-curl "http://localhost:3000/api/users?page=1&limit=10"
+curl "http://localhost:3000/api/users?page=1&limit=10" \
+  -H "Authorization: Bearer <YOUR_JWT_TOKEN>"
 ```
 
 ### Sample requests
@@ -354,7 +355,8 @@ curl -X POST "http://localhost:3000/api/users" \
 Get a user by id:
 
 ```bash
-curl "http://localhost:3000/api/users/1"
+curl "http://localhost:3000/api/users/1" \
+  -H "Authorization: Bearer <YOUR_JWT_TOKEN>"
 ```
 
 Update a user (PATCH):
@@ -380,6 +382,8 @@ Routes return consistent JSON errors and meaningful HTTP status codes:
 - `400 Bad Request` → invalid input (invalid JSON, invalid `page/limit`, invalid `id`)
 - `404 Not Found` → user not found
 - `409 Conflict` → unique constraint conflict (e.g., email already exists)
+- `401 Unauthorized` → missing/invalid credentials (auth)
+- `403 Forbidden` → invalid/expired token (auth)
 - `500 Internal Server Error` → unexpected server/database errors
 
 ### Reflection (why consistency matters)
@@ -446,6 +450,8 @@ export const ERROR_CODES = {
   NOT_FOUND: "E002",
   DATABASE_FAILURE: "E003",
   CONFLICT: "E004",
+  UNAUTHORIZED: "E005",
+  FORBIDDEN: "E006",
   INTERNAL_ERROR: "E500",
 } as const;
 ```
@@ -548,6 +554,144 @@ Expected failing response shape:
 ### Reflection (schema reuse + maintainability)
 
 Having a single schema source of truth reduces duplicated validation rules, makes API behavior consistent across endpoints, and helps teams evolve payload requirements safely (schema changes are explicit and type-checked).
+
+---
+
+## Authentication APIs (Signup / Login)
+
+### Authentication vs authorization
+
+- **Authentication**: verifies *who you are* (login/signup).
+- **Authorization**: verifies *what you can access* (e.g., admin-only routes).
+
+This project focuses on **authentication** with bcrypt (password hashing) and JWT (session token).
+
+### API structure
+
+- `POST /api/auth/signup` → create account (hashes password)
+- `POST /api/auth/login` → verify password and issue JWT
+
+Source files:
+
+- `src/app/api/auth/signup/route.ts`
+- `src/app/api/auth/login/route.ts`
+
+### Environment variables
+
+Server-side secret used for signing/verifying tokens:
+
+```bash
+JWT_SECRET=your_jwt_secret_here_change_in_production
+```
+
+### Signup flow (bcrypt)
+
+On signup, the API:
+
+1. Validates input (Zod)
+2. Checks if a user already exists
+3. Hashes the password with bcrypt (salt rounds: `10`)
+4. Stores **only the hash** (never the plaintext)
+
+Signup request:
+
+```bash
+curl -X POST "http://localhost:3000/api/auth/signup" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice","email":"alice@example.com","password":"mypassword123"}'
+```
+
+Signup success response (example):
+
+```json
+{
+  "success": true,
+  "message": "Signup successful",
+  "data": {
+    "id": 1,
+    "name": "Alice",
+    "email": "alice@example.com",
+    "role": "CUSTOMER",
+    "phone": null,
+    "createdAt": "2025-12-27T10:00:00.000Z",
+    "updatedAt": "2025-12-27T10:00:00.000Z"
+  },
+  "timestamp": "2025-12-27T10:00:00.000Z"
+}
+```
+
+### Login flow (JWT)
+
+On login, the API:
+
+1. Validates input (Zod)
+2. Finds the user by email
+3. Compares password with the stored hash using bcrypt
+4. Issues a signed JWT access token (expires in **1 hour**)
+
+Login request:
+
+```bash
+curl -X POST "http://localhost:3000/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","password":"mypassword123"}'
+```
+
+Login success response (example):
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "token": "<JWT_TOKEN>",
+    "expiresIn": "1h",
+    "user": {
+      "id": 1,
+      "name": "Alice",
+      "email": "alice@example.com",
+      "role": "CUSTOMER",
+      "phone": null,
+      "createdAt": "2025-12-27T10:00:00.000Z",
+      "updatedAt": "2025-12-27T10:00:00.000Z"
+    }
+  },
+  "timestamp": "2025-12-27T10:00:00.000Z"
+}
+```
+
+### Protected route (token validation)
+
+`GET /api/users` is protected and requires:
+
+```http
+Authorization: Bearer <YOUR_JWT_TOKEN>
+```
+
+Example:
+
+```bash
+curl "http://localhost:3000/api/users?page=1&limit=10" \
+  -H "Authorization: Bearer <YOUR_JWT_TOKEN>"
+```
+
+If the token is missing you’ll get `401` (E005). If it’s invalid/expired you’ll get `403` (E006).
+
+### Reflection: expiry, storage, refresh
+
+- **Token expiry**: short-lived access tokens (`1h`) reduce the damage window if a token leaks.
+- **Token storage**:
+  - `localStorage` is easy but vulnerable to XSS.
+  - `httpOnly` cookies reduce XSS risk (recommended for many apps) but require CSRF considerations.
+- **Refresh strategy (not implemented here)**: for long-lived sessions, use a separate refresh token (rotated, stored securely) to mint new short-lived access tokens.
+
+### Postman evidence
+
+Add screenshots showing:
+
+- Signup success + signup conflict (existing email)
+- Login success + login failure
+- Protected route success + missing/expired token cases
 
 ### Schema snippet
 

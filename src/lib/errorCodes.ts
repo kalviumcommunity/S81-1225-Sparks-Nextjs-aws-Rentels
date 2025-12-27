@@ -3,6 +3,8 @@ export const ERROR_CODES = {
   NOT_FOUND: "E002",
   DATABASE_FAILURE: "E003",
   CONFLICT: "E004",
+  UNAUTHORIZED: "E005",
+  FORBIDDEN: "E006",
   INTERNAL_ERROR: "E500",
 } as const;
 
