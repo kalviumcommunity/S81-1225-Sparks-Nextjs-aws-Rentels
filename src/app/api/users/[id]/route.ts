@@ -1,22 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { ERROR_CODES } from "@/lib/errorCodes";
 import { sendError, sendSuccess } from "@/lib/responseHandler";
+import {
+  formatZodError,
+  userPatchSchema,
+  userPutSchema,
+} from "@/lib/schemas/userSchema";
 import { Prisma } from "@prisma/client";
-
-const ROLE_VALUES = ["CUSTOMER", "OWNER", "ADMIN"] as const;
-type Role = (typeof ROLE_VALUES)[number];
+import { ZodError } from "zod";
 
 function parseId(idParam: string) {
   const id = Number(idParam);
   if (!Number.isInteger(id) || id < 1) return null;
   return id;
-}
-
-function isRole(value: unknown): value is Role {
-  return (
-    typeof value === "string" &&
-    (ROLE_VALUES as readonly string[]).includes(value)
-  );
 }
 
 export async function GET(
@@ -43,7 +39,8 @@ export async function GET(
 
 async function updateUser(
   req: Request,
-  ctx: { params: Promise<{ id: string }> }
+  ctx: { params: Promise<{ id: string }> },
+  mode: "patch" | "put"
 ) {
   const { id: idParam } = await ctx.params;
   const id = parseId(idParam);
@@ -58,64 +55,29 @@ async function updateUser(
     return sendError("Invalid JSON body", ERROR_CODES.VALIDATION_ERROR, 400);
   }
 
-  if (typeof body !== "object" || body === null) {
-    return sendError("Invalid request body", ERROR_CODES.VALIDATION_ERROR, 400);
-  }
-
-  const { name, email, role, phone } = body as Record<string, unknown>;
-
-  if (
-    name !== undefined &&
-    (typeof name !== "string" || name.trim().length === 0)
-  ) {
-    return sendError(
-      "If provided, 'name' must be a non-empty string",
-      ERROR_CODES.VALIDATION_ERROR,
-      400
-    );
-  }
-
-  if (
-    email !== undefined &&
-    (typeof email !== "string" || email.trim().length === 0)
-  ) {
-    return sendError(
-      "If provided, 'email' must be a non-empty string",
-      ERROR_CODES.VALIDATION_ERROR,
-      400
-    );
-  }
-
-  if (phone !== undefined && phone !== null && typeof phone !== "string") {
-    return sendError(
-      "'phone' must be a string",
-      ERROR_CODES.VALIDATION_ERROR,
-      400
-    );
-  }
-
-  if (role !== undefined && role !== null && !isRole(role)) {
-    return sendError(
-      "'role' must be one of: CUSTOMER, OWNER, ADMIN",
-      ERROR_CODES.VALIDATION_ERROR,
-      400
-    );
-  }
-
   try {
+    const validated = (mode === "put" ? userPutSchema : userPatchSchema).parse(
+      body
+    );
+
     const updated = await prisma.user.update({
       where: { id },
       data: {
-        name: typeof name === "string" ? name.trim() : undefined,
-        email:
-          typeof email === "string" ? email.trim().toLowerCase() : undefined,
-        role: (role ?? undefined) as Role | undefined,
-        phone: (phone ?? undefined) as string | undefined,
+        name: validated.name,
+        email: validated.email,
+        role: validated.role,
+        phone: validated.phone,
       },
     });
 
     return sendSuccess(updated, "User updated successfully", 200);
   } catch (err) {
+    if (err instanceof ZodError) {
+      return sendError("Validation Error", ERROR_CODES.VALIDATION_ERROR, 400, {
+        errors: formatZodError(err),
+      });
+    }
+
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === "P2025") {
         return sendError("User not found", ERROR_CODES.NOT_FOUND, 404);
@@ -143,14 +105,14 @@ export async function PATCH(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
 ) {
-  return updateUser(req, ctx);
+  return updateUser(req, ctx, "patch");
 }
 
 export async function PUT(
   req: Request,
   ctx: { params: Promise<{ id: string }> }
 ) {
-  return updateUser(req, ctx);
+  return updateUser(req, ctx, "put");
 }
 
 export async function DELETE(

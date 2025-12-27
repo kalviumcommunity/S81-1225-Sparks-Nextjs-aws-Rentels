@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { ERROR_CODES } from "@/lib/errorCodes";
 import { sendError, sendSuccess } from "@/lib/responseHandler";
+import { formatZodError, userCreateSchema } from "@/lib/schemas/userSchema";
 import { Prisma } from "@prisma/client";
-
-const ROLE_VALUES = ["CUSTOMER", "OWNER", "ADMIN"] as const;
-type Role = (typeof ROLE_VALUES)[number];
+import { ZodError } from "zod";
 
 function parsePagination(url: string) {
   const { searchParams } = new URL(url);
@@ -24,13 +23,6 @@ function parsePagination(url: string) {
   }
 
   return { page, limit };
-}
-
-function isRole(value: unknown): value is Role {
-  return (
-    typeof value === "string" &&
-    (ROLE_VALUES as readonly string[]).includes(value)
-  );
 }
 
 export async function GET(req: Request) {
@@ -70,56 +62,26 @@ export async function POST(req: Request) {
     return sendError("Invalid JSON body", ERROR_CODES.VALIDATION_ERROR, 400);
   }
 
-  if (typeof body !== "object" || body === null) {
-    return sendError("Invalid request body", ERROR_CODES.VALIDATION_ERROR, 400);
-  }
-
-  const { name, email, role, phone } = body as Record<string, unknown>;
-
-  if (typeof name !== "string" || name.trim().length === 0) {
-    return sendError(
-      "Missing required field: name",
-      ERROR_CODES.VALIDATION_ERROR,
-      400
-    );
-  }
-
-  if (typeof email !== "string" || email.trim().length === 0) {
-    return sendError(
-      "Missing required field: email",
-      ERROR_CODES.VALIDATION_ERROR,
-      400
-    );
-  }
-
-  if (phone !== undefined && phone !== null && typeof phone !== "string") {
-    return sendError(
-      "'phone' must be a string",
-      ERROR_CODES.VALIDATION_ERROR,
-      400
-    );
-  }
-
-  if (role !== undefined && role !== null && !isRole(role)) {
-    return sendError(
-      "'role' must be one of: CUSTOMER, OWNER, ADMIN",
-      ERROR_CODES.VALIDATION_ERROR,
-      400
-    );
-  }
-
   try {
+    const validated = userCreateSchema.parse(body);
+
     const created = await prisma.user.create({
       data: {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        role: (role ?? undefined) as Role | undefined,
-        phone: (phone ?? undefined) as string | undefined,
+        name: validated.name,
+        email: validated.email,
+        role: validated.role,
+        phone: validated.phone,
       },
     });
 
     return sendSuccess(created, "User created successfully", 201);
   } catch (err) {
+    if (err instanceof ZodError) {
+      return sendError("Validation Error", ERROR_CODES.VALIDATION_ERROR, 400, {
+        errors: formatZodError(err),
+      });
+    }
+
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === "P2002") {
         return sendError(
