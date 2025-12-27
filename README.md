@@ -266,6 +266,95 @@ Prisma connection OK. Users: []
 
 If Postgres is not running, you’ll typically see `ECONNREFUSED`.
 
+---
+
+## API Route Structure & Naming (REST)
+
+This project uses **Next.js App Router file-based routing** for APIs: every `route.ts` under `src/app/api/**` becomes an endpoint under `/api/**`.
+
+### Route hierarchy
+
+Users are implemented as a RESTful resource with **plural nouns**:
+
+- `GET /api/users` → list users (supports pagination)
+- `POST /api/users` → create user
+- `GET /api/users/:id` → get user by id
+- `PUT /api/users/:id` → update user by id
+- `PATCH /api/users/:id` → partial update user by id
+- `DELETE /api/users/:id` → delete user by id
+
+**Source files**
+- `src/app/api/users/route.ts`
+- `src/app/api/users/[id]/route.ts`
+
+### Pagination (GET /api/users)
+
+Query params:
+- `page` (default: `1`)
+- `limit` (default: `10`, max: `100`)
+
+Response shape:
+
+```json
+{
+	"page": 1,
+	"limit": 10,
+	"total": 42,
+	"data": []
+}
+```
+
+Example:
+
+```bash
+curl "http://localhost:3000/api/users?page=1&limit=10"
+```
+
+### Sample requests
+
+Create a user:
+
+```bash
+curl -X POST "http://localhost:3000/api/users" \
+	-H "Content-Type: application/json" \
+	-d '{"name":"Alice","email":"alice@example.com","role":"CUSTOMER","phone":"+1-555-0100"}'
+```
+
+Get a user by id:
+
+```bash
+curl "http://localhost:3000/api/users/1"
+```
+
+Update a user (PATCH):
+
+```bash
+curl -X PATCH "http://localhost:3000/api/users/1" \
+	-H "Content-Type: application/json" \
+	-d '{"name":"Alice Updated"}'
+```
+
+Delete a user:
+
+```bash
+curl -X DELETE "http://localhost:3000/api/users/1"
+```
+
+### Error handling & status codes
+
+Routes return consistent JSON errors and meaningful HTTP status codes:
+
+- `200 OK` → successful `GET`, `PUT/PATCH`, `DELETE`
+- `201 Created` → successful `POST`
+- `400 Bad Request` → invalid input (invalid JSON, invalid `page/limit`, invalid `id`)
+- `404 Not Found` → user not found
+- `409 Conflict` → unique constraint conflict (e.g., email already exists)
+- `500 Internal Server Error` → unexpected server/database errors
+
+### Reflection (why consistency matters)
+
+Using predictable, noun-based route naming (e.g., `/api/users` rather than `/api/getUsers`) reduces ambiguity, keeps endpoints discoverable, and helps teammates and clients integrate faster with fewer mismatches in expectations.
+
 ### Schema snippet
 
 ```prisma
