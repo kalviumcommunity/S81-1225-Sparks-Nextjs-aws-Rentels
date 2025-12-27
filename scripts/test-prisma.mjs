@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import prismaPkg from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pgPkg from "pg";
