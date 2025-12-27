@@ -20,7 +20,13 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    ignores: [".next/**", "out/**", "build/**", "next-env.d.ts"],
+    ignores: [
+      ".next/**",
+      "out/**",
+      "build/**",
+      "next-env.d.ts",
+      "scripts/test-prisma.cjs",
+    ],
   },
 ]);
 

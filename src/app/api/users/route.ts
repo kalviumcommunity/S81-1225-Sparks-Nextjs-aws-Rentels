@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { ERROR_CODES } from "@/lib/errorCodes";
+import { sendError, sendSuccess } from "@/lib/responseHandler";
 import { Prisma } from "@prisma/client";
-import { NextResponse } from "next/server";
 
 const ROLE_VALUES = ["CUSTOMER", "OWNER", "ADMIN"] as const;
 type Role = (typeof ROLE_VALUES)[number];
@@ -35,7 +36,7 @@ function isRole(value: unknown): value is Role {
 export async function GET(req: Request) {
   const pagination = parsePagination(req.url);
   if ("error" in pagination) {
-    return NextResponse.json({ error: pagination.error }, { status: 400 });
+    return sendError(pagination.error, ERROR_CODES.VALIDATION_ERROR, 400);
   }
 
   const { page, limit } = pagination;
@@ -51,12 +52,13 @@ export async function GET(req: Request) {
       }),
     ]);
 
-    return NextResponse.json({ page, limit, total, data }, { status: 200 });
-  } catch {
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+    return sendSuccess(
+      { page, limit, total, data },
+      "Users fetched successfully",
+      200
     );
+  } catch {
+    return sendError("Failed to fetch users", ERROR_CODES.INTERNAL_ERROR, 500);
   }
 }
 
@@ -65,37 +67,44 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return sendError("Invalid JSON body", ERROR_CODES.VALIDATION_ERROR, 400);
   }
 
   if (typeof body !== "object" || body === null) {
-    return NextResponse.json(
-      { error: "Invalid request body" },
-      { status: 400 }
-    );
+    return sendError("Invalid request body", ERROR_CODES.VALIDATION_ERROR, 400);
   }
 
   const { name, email, role, phone } = body as Record<string, unknown>;
 
   if (typeof name !== "string" || name.trim().length === 0) {
-    return NextResponse.json({ error: "'name' is required" }, { status: 400 });
+    return sendError(
+      "Missing required field: name",
+      ERROR_CODES.VALIDATION_ERROR,
+      400
+    );
   }
 
   if (typeof email !== "string" || email.trim().length === 0) {
-    return NextResponse.json({ error: "'email' is required" }, { status: 400 });
+    return sendError(
+      "Missing required field: email",
+      ERROR_CODES.VALIDATION_ERROR,
+      400
+    );
   }
 
   if (phone !== undefined && phone !== null && typeof phone !== "string") {
-    return NextResponse.json(
-      { error: "'phone' must be a string" },
-      { status: 400 }
+    return sendError(
+      "'phone' must be a string",
+      ERROR_CODES.VALIDATION_ERROR,
+      400
     );
   }
 
   if (role !== undefined && role !== null && !isRole(role)) {
-    return NextResponse.json(
-      { error: "'role' must be one of: CUSTOMER, OWNER, ADMIN" },
-      { status: 400 }
+    return sendError(
+      "'role' must be one of: CUSTOMER, OWNER, ADMIN",
+      ERROR_CODES.VALIDATION_ERROR,
+      400
     );
   }
 
@@ -109,20 +118,23 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(created, { status: 201 });
+    return sendSuccess(created, "User created successfully", 201);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === "P2002") {
-        return NextResponse.json(
-          { error: "A user with that unique field already exists" },
-          { status: 409 }
+        return sendError(
+          "A user with that email already exists",
+          ERROR_CODES.CONFLICT,
+          409
         );
       }
     }
 
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+    return sendError(
+      "Failed to create user",
+      ERROR_CODES.INTERNAL_ERROR,
+      500,
+      err
     );
   }
 }
