@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
 import { ERROR_CODES } from "@/lib/errorCodes";
 import { sendError, sendSuccess } from "@/lib/responseHandler";
 import {
@@ -16,9 +17,14 @@ function parseId(idParam: string) {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ id: string }> }
 ) {
+  const auth = requireAuth(req);
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   const { id: idParam } = await ctx.params;
   const id = parseId(idParam);
   if (!id) {
@@ -26,7 +32,18 @@ export async function GET(
   }
 
   try {
-    const user = await prisma.user.findUnique({ where: { id } });
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
     if (!user) {
       return sendError("User not found", ERROR_CODES.NOT_FOUND, 404);
     }
@@ -67,6 +84,15 @@ async function updateUser(
         email: validated.email,
         role: validated.role,
         phone: validated.phone,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        phone: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 

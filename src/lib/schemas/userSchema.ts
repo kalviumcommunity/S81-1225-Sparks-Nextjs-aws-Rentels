@@ -1,4 +1,6 @@
-import { z, type ZodError } from "zod";
+import { z } from "zod";
+
+export { formatZodError } from "@/lib/schemas/zodUtils";
 
 export const ROLE_VALUES = ["CUSTOMER", "OWNER", "ADMIN"] as const;
 
@@ -38,10 +40,3 @@ export const userPatchSchema = userCreateSchema
   });
 
 export type UserPatchInput = z.infer<typeof userPatchSchema>;
-
-export function formatZodError(error: ZodError) {
-  return error.issues.map((e) => ({
-    field: e.path.length > 0 ? String(e.path[0]) : "_",
-    message: e.message,
-  }));
-}

@@ -3,6 +3,7 @@ import { config } from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import bcrypt from "bcrypt";
 
 // Load environment variables from .env.local
 config({ path: ".env.local" });
@@ -20,6 +21,8 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log("🌱 Starting database seeding...\n");
 
+  const seededPasswordHash = await bcrypt.hash("Password123!", 10);
+
   // Seed Users
   console.log("👥 Seeding users...");
   await prisma.user.upsert({
@@ -28,6 +31,7 @@ async function main() {
     create: {
       name: "Admin User",
       email: "admin@sparkrentals.com",
+      password: seededPasswordHash,
       role: "ADMIN",
       phone: "+1-555-0100",
     },
@@ -39,6 +43,7 @@ async function main() {
     create: {
       name: "Alice Johnson",
       email: "alice@example.com",
+      password: seededPasswordHash,
       role: "OWNER",
       phone: "+1-555-0101",
     },
@@ -50,6 +55,7 @@ async function main() {
     create: {
       name: "Bob Smith",
       email: "bob@example.com",
+      password: seededPasswordHash,
       role: "OWNER",
       phone: "+1-555-0102",
     },
@@ -61,6 +67,7 @@ async function main() {
     create: {
       name: "Charlie Brown",
       email: "charlie@example.com",
+      password: seededPasswordHash,
       role: "CUSTOMER",
       phone: "+1-555-0103",
     },
@@ -72,6 +79,7 @@ async function main() {
     create: {
       name: "Diana Prince",
       email: "diana@example.com",
+      password: seededPasswordHash,
       role: "CUSTOMER",
       phone: "+1-555-0104",
     },
