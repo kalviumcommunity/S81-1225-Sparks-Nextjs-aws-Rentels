@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 
 import { prisma } from "@/lib/prisma";
 import { ERROR_CODES } from "@/lib/errorCodes";
+import { handleError } from "@/lib/errorHandler";
 import { sendError, sendSuccess } from "@/lib/responseHandler";
 import { signAccessToken } from "@/lib/auth";
 import { loginSchema } from "@/lib/schemas/authSchema";
@@ -70,6 +71,6 @@ export async function POST(req: Request) {
       });
     }
 
-    return sendError("Login failed", ERROR_CODES.INTERNAL_ERROR, 500, err);
+    return handleError(err, "POST /api/auth/login");
   }
 }

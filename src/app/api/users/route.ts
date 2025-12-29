@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ERROR_CODES } from "@/lib/errorCodes";
+import { handleError } from "@/lib/errorHandler";
 import { sendError, sendSuccess } from "@/lib/responseHandler";
 import { formatZodError, userCreateSchema } from "@/lib/schemas/userSchema";
 import { Prisma } from "@prisma/client";
@@ -64,8 +65,8 @@ export async function GET(req: Request) {
       "Users fetched successfully",
       200
     );
-  } catch {
-    return sendError("Failed to fetch users", ERROR_CODES.INTERNAL_ERROR, 500);
+  } catch (err) {
+    return handleError(err, "GET /api/users");
   }
 }
 
@@ -116,11 +117,6 @@ export async function POST(req: Request) {
       }
     }
 
-    return sendError(
-      "Failed to create user",
-      ERROR_CODES.INTERNAL_ERROR,
-      500,
-      err
-    );
+    return handleError(err, "POST /api/users");
   }
 }

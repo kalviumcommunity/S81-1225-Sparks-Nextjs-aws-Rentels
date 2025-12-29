@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 import { ERROR_CODES } from "@/lib/errorCodes";
+import { handleError } from "@/lib/errorHandler";
 import { sendError, sendSuccess } from "@/lib/responseHandler";
 import {
   formatZodError,
@@ -49,8 +50,8 @@ export async function GET(
     }
 
     return sendSuccess(user, "User fetched successfully", 200);
-  } catch {
-    return sendError("Failed to fetch user", ERROR_CODES.INTERNAL_ERROR, 500);
+  } catch (err) {
+    return handleError(err, "GET /api/users/:id");
   }
 }
 
@@ -59,6 +60,8 @@ async function updateUser(
   ctx: { params: Promise<{ id: string }> },
   mode: "patch" | "put"
 ) {
+  const method = mode === "put" ? "PUT" : "PATCH";
+
   const { id: idParam } = await ctx.params;
   const id = parseId(idParam);
   if (!id) {
@@ -118,12 +121,7 @@ async function updateUser(
       }
     }
 
-    return sendError(
-      "Failed to update user",
-      ERROR_CODES.INTERNAL_ERROR,
-      500,
-      err
-    );
+    return handleError(err, `${method} /api/users/:id`);
   }
 }
 
@@ -162,11 +160,6 @@ export async function DELETE(
       return sendError("User not found", ERROR_CODES.NOT_FOUND, 404);
     }
 
-    return sendError(
-      "Failed to delete user",
-      ERROR_CODES.INTERNAL_ERROR,
-      500,
-      err
-    );
+    return handleError(err, "DELETE /api/users/:id");
   }
 }
