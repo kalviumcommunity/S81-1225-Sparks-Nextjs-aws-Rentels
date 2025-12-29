@@ -42,7 +42,8 @@ export async function middleware(req: NextRequest) {
     }
 
     const requestHeaders = new Headers(req.headers);
-    if (payload.email) requestHeaders.set("x-user-email", String(payload.email));
+    if (payload.email)
+      requestHeaders.set("x-user-email", String(payload.email));
     if (payload.role) requestHeaders.set("x-user-role", String(payload.role));
 
     return NextResponse.next({ request: { headers: requestHeaders } });

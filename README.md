@@ -429,6 +429,101 @@ The global helpers live in:
 - `src/lib/responseHandler.ts`
 - `src/lib/errorCodes.ts`
 
+---
+
+## Centralized Error Handling (Middleware-style)
+
+Next.js App Router does not provide an Express-style “catch-all” middleware for route handlers, so this project centralizes error handling via a **shared `handleError()` utility** that every API route can call inside `catch` blocks.
+
+### Why this matters
+
+- **Consistency:** one response shape for all errors.
+- **Security:** in production, user responses stay minimal.
+- **Observability:** developers get structured JSON logs with context.
+
+### Files
+
+- `src/lib/logger.ts` → structured JSON logger
+- `src/lib/errorHandler.ts` → centralized `handleError(error, context)`
+
+### Development vs Production behavior
+
+| Environment | Client response | Logging |
+|---|---|---|
+| Development (`NODE_ENV!=production`) | Uses the real error message and includes stack info in `error.details` | Full stack logged |
+| Production (`NODE_ENV=production`) | Returns a safe message: `Something went wrong. Please try again later.` | Stack is logged as `REDACTED` |
+
+### Logger (structured)
+
+`src/lib/logger.ts` writes JSON lines like:
+
+```json
+{
+  "level": "error",
+  "message": "Error in GET /api/users",
+  "meta": {
+    "message": "Database connection failed!",
+    "stack": "REDACTED",
+    "status": 500,
+    "code": "E500"
+  },
+  "timestamp": "2025-12-29T16:45:00.000Z"
+}
+```
+
+### Using the handler in routes
+
+Routes catch unexpected failures and return `handleError()`:
+
+```ts
+import { handleError } from "@/lib/errorHandler";
+
+export async function GET() {
+  try {
+    // ...your logic
+  } catch (error) {
+    return handleError(error, "GET /api/users");
+  }
+}
+```
+
+### Example response (dev)
+
+```json
+{
+  "success": false,
+  "message": "Database connection failed!",
+  "error": {
+    "code": "E500",
+    "details": {
+      "context": "GET /api/users",
+      "name": "Error",
+      "stack": "Error: Database connection failed!\n  at ..."
+    }
+  },
+  "timestamp": "2025-12-29T16:45:00.000Z"
+}
+```
+
+### Example response (prod)
+
+```json
+{
+  "success": false,
+  "message": "Something went wrong. Please try again later.",
+  "error": {
+    "code": "E500"
+  },
+  "timestamp": "2025-12-29T16:45:00.000Z"
+}
+```
+
+### Reflection (least leakage, fastest debugging)
+
+- Structured logs make it easy to search by `context` and correlate failures.
+- Redacting stack traces in production reduces accidental data exposure.
+- Extensible approach: `handleError()` can be expanded to map custom error classes (Validation/Auth/DB) to specific status codes and `ERROR_CODES`.
+
 Usage pattern (example from Users routes):
 
 ```ts
