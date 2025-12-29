@@ -10,6 +10,7 @@ import {
 } from "@/lib/schemas/userSchema";
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
+import { invalidateCache } from "@/lib/redis";
 
 function parseId(idParam: string) {
   const id = Number(idParam);
@@ -99,6 +100,12 @@ async function updateUser(
       },
     });
 
+    // Invalidate specific user and list cache
+    await Promise.all([
+        invalidateCache(`users:${id}`), // If we decide to cache individual users later
+        invalidateCache("users:list:*")
+    ]);
+
     return sendSuccess(updated, "User updated successfully", 200);
   } catch (err) {
     if (err instanceof ZodError) {
@@ -151,6 +158,13 @@ export async function DELETE(
 
   try {
     await prisma.user.delete({ where: { id } });
+    
+    // Invalidate specific user and list cache
+    await Promise.all([
+        invalidateCache(`users:${id}`),
+        invalidateCache("users:list:*")
+    ]);
+
     return sendSuccess({ id }, "User deleted successfully", 200);
   } catch (err) {
     if (

@@ -6,6 +6,7 @@ import { sendError, sendSuccess } from "@/lib/responseHandler";
 import { formatZodError, userCreateSchema } from "@/lib/schemas/userSchema";
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
+import redis, { invalidateCache } from "@/lib/redis";
 
 function parsePagination(url: string) {
   const { searchParams } = new URL(url);
@@ -41,6 +42,25 @@ export async function GET(req: Request) {
   const { page, limit } = pagination;
   const skip = (page - 1) * limit;
 
+  // 1. Try fetching from Redis
+  const cacheKey = `users:list:${page}:${limit}`;
+  try {
+    const cachedData = await redis.get(cacheKey);
+    if (cachedData) {
+      console.log(`Cache HIT for ${cacheKey}`);
+      return sendSuccess(
+        JSON.parse(cachedData),
+        "Users fetched successfully (from cache)",
+        200
+      );
+    }
+  } catch (err) {
+    console.warn("Redis error:", err);
+    // Fallback to DB if Redis fails
+  }
+
+  console.log(`Cache MISS for ${cacheKey}`);
+
   try {
     const [total, data] = await Promise.all([
       prisma.user.count(),
@@ -60,8 +80,22 @@ export async function GET(req: Request) {
       }),
     ]);
 
+    const responsePayload = { page, limit, total, data };
+
+    // 2. Store in Redis (TTL: 60 seconds)
+    try {
+      await redis.set(
+        cacheKey,
+        JSON.stringify(responsePayload),
+        "EX",
+        60
+      );
+    } catch (err) {
+      console.warn("Redis set error:", err);
+    }
+
     return sendSuccess(
-      { page, limit, total, data },
+      responsePayload,
       "Users fetched successfully",
       200
     );
@@ -98,6 +132,9 @@ export async function POST(req: Request) {
         updatedAt: true,
       },
     });
+
+    // Invalidate list cache
+    await invalidateCache("users:list:*");
 
     return sendSuccess(created, "User created successfully", 201);
   } catch (err) {

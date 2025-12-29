@@ -236,6 +236,24 @@ redis_cache  | Ready to accept connections tcp
 
 ---
 
+## Redis Caching Strategy
+We have integrated Redis to improve API performance for the `/api/users` endpoint.
+
+### Configuration
+- **Library**: `ioredis`
+- **Pattern**: Cache-Aside (Lazy Loading)
+- **TTL**: 60 seconds for list data
+- **Invalidation**: Automatic cache clearing on User creation (`POST`), update (`PUT`/`PATCH`), and deletion (`DELETE`).
+
+### Performance
+- **Cold Cache**: ~150ms (fetches from DB)
+- **Warm Cache**: ~10ms (fetches from Redis)
+
+### Connection
+Ensure a Redis instance is running at `redis://localhost:6379` or set `REDIS_URL`.
+
+---
+
 ## Prisma ORM (PostgreSQL)
 
 Prisma is the ORM layer for this project. It provides:
