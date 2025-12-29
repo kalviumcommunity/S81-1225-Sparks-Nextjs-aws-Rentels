@@ -1,0 +1,10 @@
+---------------------------
+create symlink to ../../../node_modules/bcrypt
+
+Caused by:
+- A required privilege is not held by the client. (os error 1314)
+---------------------------
+create symlink to ../../../node_modules/bcrypt
+
+Caused by:
+- A required privilege is not held by the client. (os error 1314)
