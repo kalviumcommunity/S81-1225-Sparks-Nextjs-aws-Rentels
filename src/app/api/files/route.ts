@@ -40,12 +40,9 @@ export async function POST(req: Request) {
 
     const expectedPrefix = `${keyPrefix}/${auth.payload.id}/`;
     if (!input.key.startsWith(expectedPrefix)) {
-      return sendError(
-        "Invalid key",
-        ERROR_CODES.FORBIDDEN,
-        403,
-        { expectedPrefix }
-      );
+      return sendError("Invalid key", ERROR_CODES.FORBIDDEN, 403, {
+        expectedPrefix,
+      });
     }
 
     const { bucket, region } = getS3Config();

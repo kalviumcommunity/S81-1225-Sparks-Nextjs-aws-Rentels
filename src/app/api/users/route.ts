@@ -84,21 +84,12 @@ export async function GET(req: Request) {
 
     // 2. Store in Redis (TTL: 60 seconds)
     try {
-      await redis.set(
-        cacheKey,
-        JSON.stringify(responsePayload),
-        "EX",
-        60
-      );
+      await redis.set(cacheKey, JSON.stringify(responsePayload), "EX", 60);
     } catch (err) {
       console.warn("Redis set error:", err);
     }
 
-    return sendSuccess(
-      responsePayload,
-      "Users fetched successfully",
-      200
-    );
+    return sendSuccess(responsePayload, "Users fetched successfully", 200);
   } catch (err) {
     return handleError(err, "GET /api/users");
   }

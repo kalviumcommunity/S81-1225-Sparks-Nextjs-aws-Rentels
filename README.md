@@ -1196,3 +1196,65 @@ To ensure query health in production (AWS/Vercel):
   docker compose down -v --rmi all
   ```
 - **Windows-specific**: Ensure Docker Desktop is running with WSL 2 backend; if file sharing prompts appear, allow the project drive. Antivirus or firewall can slow bind mounts; prefer image builds over host mounts for production-like runs.
+
+---
+
+## Lesson: Page Routing and Dynamic Routes (App Router)
+
+This project now includes a working route structure with **public**, **protected**, and **dynamic** pages using Next.js App Router conventions.
+
+### Route map
+
+**Public routes**
+
+- `/` → Home page
+- `/login` → Login page (demo login)
+
+**Protected routes (via middleware + cookie)**
+
+- `/dashboard` → Protected dashboard
+- `/users` → Protected users list
+- `/users/[id]` → Protected dynamic user profile
+
+**Error handling**
+
+- `not-found.tsx` → Custom 404 page
+- `/users/[id]` calls `notFound()` when `id` is not numeric (example of graceful error states).
+
+### Where routing is implemented
+
+- Pages live under `src/app/*`:
+  - `src/app/page.tsx`
+  - `src/app/login/page.tsx`
+  - `src/app/dashboard/page.tsx`
+  - `src/app/users/page.tsx`
+  - `src/app/users/[id]/page.tsx`
+  - `src/app/not-found.tsx`
+- Shared navigation lives in `src/app/layout.tsx`.
+
+### Middleware (public vs protected)
+
+Protected page routes are enforced by `src/middleware.ts`.
+
+- Public pages are accessible without auth.
+- Protected pages require a `token` cookie.
+- For this lesson, the login page sets a demo cookie value: `mock.jwt.token`.
+
+Note: The middleware also continues to protect existing API routes (`/api/users/*` and `/api/admin/*`) using `Authorization: Bearer <token>`.
+
+### Screenshots to include (deliverable)
+
+Add screenshots to this README (or a `docs/` folder) showing:
+
+- Home page and navbar
+- `/login` page
+- Attempting to visit `/dashboard` without a cookie (redirects to `/login`)
+- Dynamic user pages (e.g. `/users/1`, `/users/2`)
+- Custom 404 page (`/some-route-that-does-not-exist`)
+
+### Reflection (SEO, scalability, UX)
+
+- **Dynamic routing scales**: `/users/[id]` supports an unbounded number of profiles without creating a new file per user.
+- **SEO-friendly structure**: Clean, hierarchical URLs (like `/users/42`) are readable and indexable, and map naturally to content.
+- **Breadcrumbs improve UX**: Breadcrumb navigation helps users understand where they are and move around quickly (especially on deep routes).
+- **Graceful error states**: A custom 404 page and param validation (`notFound()`) prevent broken or confusing experiences.
