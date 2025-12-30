@@ -102,8 +102,8 @@ async function updateUser(
 
     // Invalidate specific user and list cache
     await Promise.all([
-        invalidateCache(`users:${id}`), // If we decide to cache individual users later
-        invalidateCache("users:list:*")
+      invalidateCache(`users:${id}`), // If we decide to cache individual users later
+      invalidateCache("users:list:*"),
     ]);
 
     return sendSuccess(updated, "User updated successfully", 200);
@@ -158,11 +158,11 @@ export async function DELETE(
 
   try {
     await prisma.user.delete({ where: { id } });
-    
+
     // Invalidate specific user and list cache
     await Promise.all([
-        invalidateCache(`users:${id}`),
-        invalidateCache("users:list:*")
+      invalidateCache(`users:${id}`),
+      invalidateCache("users:list:*"),
     ]);
 
     return sendSuccess({ id }, "User deleted successfully", 200);

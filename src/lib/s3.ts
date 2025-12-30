@@ -31,8 +31,7 @@ export function getS3ObjectUrl({
 }) {
   // Virtual-hosted–style URL. For private buckets this URL may not be publicly accessible,
   // but it's still useful to store as a reference alongside the object key.
-  return `https://${bucket}.s3.${region}.amazonaws.com/${encodeURIComponent(key).replace(
-    /%2F/g,
-    "/"
-  )}`;
+  return `https://${bucket}.s3.${region}.amazonaws.com/${encodeURIComponent(
+    key
+  ).replace(/%2F/g, "/")}`;
 }

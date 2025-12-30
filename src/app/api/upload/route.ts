@@ -6,7 +6,10 @@ import { ERROR_CODES } from "@/lib/errorCodes";
 import { handleError } from "@/lib/errorHandler";
 import { sendError, sendSuccess } from "@/lib/responseHandler";
 import { getS3Client, getS3Config, getS3ObjectUrl } from "@/lib/s3";
-import { uploadPresignSchema, formatZodError } from "@/lib/schemas/uploadSchema";
+import {
+  uploadPresignSchema,
+  formatZodError,
+} from "@/lib/schemas/uploadSchema";
 import {
   buildUploadKey,
   getUploadConfig,
@@ -48,12 +51,9 @@ export async function POST(req: Request) {
     }
 
     if (input.fileSize > maxBytes) {
-      return sendError(
-        "File too large",
-        ERROR_CODES.VALIDATION_ERROR,
-        400,
-        { maxBytes }
-      );
+      return sendError("File too large", ERROR_CODES.VALIDATION_ERROR, 400, {
+        maxBytes,
+      });
     }
 
     const { bucket, region } = getS3Config();

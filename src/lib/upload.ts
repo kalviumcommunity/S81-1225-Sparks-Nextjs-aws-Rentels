@@ -17,7 +17,8 @@ export function getUploadConfig() {
   const presignTtlSeconds = presignTtlRaw ? Number(presignTtlRaw) : 60;
 
   return {
-    maxBytes: Number.isFinite(maxBytes) && maxBytes > 0 ? maxBytes : 5 * 1024 * 1024,
+    maxBytes:
+      Number.isFinite(maxBytes) && maxBytes > 0 ? maxBytes : 5 * 1024 * 1024,
     presignTtlSeconds:
       Number.isFinite(presignTtlSeconds) && presignTtlSeconds > 0
         ? presignTtlSeconds
