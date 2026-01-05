@@ -3,8 +3,8 @@ import Redis from "ioredis";
 const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
 
 redis.on("error", (err) => {
-    // Suppress unhandled error crashes if Redis is not running
-    console.warn("Redis connection error:", err.message);
+  // Suppress unhandled error crashes if Redis is not running
+  console.warn("Redis connection error:", err.message);
 });
 
 /**

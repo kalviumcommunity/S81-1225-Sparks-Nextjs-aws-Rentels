@@ -4,6 +4,10 @@ import { jwtVerify } from "jose";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 
+function getTokenFromCookie(req: NextRequest) {
+  return req.cookies.get("token")?.value ?? null;
+}
+
 function getTokenFromHeader(authHeader: string | null) {
   if (!authHeader) return null;
 
@@ -19,9 +23,45 @@ function isAdminRole(role: unknown) {
   return normalized === "admin" || normalized === "role.admin";
 }
 
+async function verifyJwt(token: string) {
+  const secret = new TextEncoder().encode(JWT_SECRET);
+  return jwtVerify(token, secret);
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // ---------------------------------------------------------------------------
+  // Page routing auth (App Router pages)
+  // Public: /, /login
+  // Protected: /dashboard/*, /users/*
+  // Uses cookie "token" (demo uses a mock token string).
+  // ---------------------------------------------------------------------------
+  if (!pathname.startsWith("/api")) {
+    const token = getTokenFromCookie(req);
+    if (!token) {
+      const loginUrl = new URL("/login", req.url);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Demo-friendly behavior: allow a mock token string set on the login page.
+    if (token !== "mock.jwt.token") {
+      try {
+        await verifyJwt(token);
+      } catch {
+        const loginUrl = new URL("/login", req.url);
+        return NextResponse.redirect(loginUrl);
+      }
+    }
+
+    return NextResponse.next();
+  }
+
+  // ---------------------------------------------------------------------------
+  // API auth (existing behavior)
+  // Protected: /api/users/*, /api/admin/*
+  // Uses Authorization: Bearer <token>
+  // ---------------------------------------------------------------------------
   const token = getTokenFromHeader(req.headers.get("authorization"));
   if (!token) {
     return NextResponse.json(
@@ -30,9 +70,13 @@ export async function middleware(req: NextRequest) {
     );
   }
 
+  // Demo-friendly behavior: allow the mock token string in non-production.
+  if (process.env.NODE_ENV !== "production" && token === "mock.jwt.token") {
+    return NextResponse.next();
+  }
+
   try {
-    const secret = new TextEncoder().encode(JWT_SECRET);
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await verifyJwt(token);
 
     if (pathname.startsWith("/api/admin") && !isAdminRole(payload.role)) {
       return NextResponse.json(
@@ -56,5 +100,10 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/users/:path*", "/api/admin/:path*"],
+  matcher: [
+    "/api/users/:path*",
+    "/api/admin/:path*",
+    "/dashboard/:path*",
+    "/users/:path*",
+  ],
 };

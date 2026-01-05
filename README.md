@@ -48,6 +48,208 @@ npm run dev
 - **Testability:** Pure functions in `lib` are straightforward to unit test; components remain presentational.
 - **Team velocity:** The `@/*` import alias and consistent conventions reduce friction, enabling faster iteration in future sprints.
 
+---
+
+## Layout & Component Architecture (Reusable UI)
+
+This project uses a small, reusable component hierarchy so navigation and spacing stay consistent across routes.
+
+### Recommended structure
+
+```
+src/
+  app/
+    layout.tsx
+    page.tsx
+    dashboard/
+      page.tsx
+  components/
+    layout/
+      Header.tsx
+      Sidebar.tsx
+      LayoutWrapper.tsx
+    ui/
+      Button.tsx
+    index.ts
+```
+
+### Component hierarchy
+
+`Header → Sidebar → LayoutWrapper → Page`
+
+`LayoutWrapper` is applied globally from `src/app/layout.tsx`, so every route renders with the same layout shell.
+
+### Usage examples
+
+- Root layout usage: `import { LayoutWrapper } from "@/components";`
+- UI usage: `import { Button } from "@/components";`
+
+Example:
+
+```tsx
+import { Button } from "@/components";
+
+export default function Example() {
+  return (
+    <div className="space-y-4">
+      <Button label="Primary" onClick={() => {}} />
+      <Button label="Secondary" variant="secondary" />
+    </div>
+  );
+}
+```
+
+### Props contracts
+
+- `Button`
+  - `label: string` (required)
+  - `variant?: "primary" | "secondary"` (optional)
+  - Supports standard button props like `onClick`, `disabled`, and `type`.
+
+### Accessibility considerations
+
+- Semantic landmarks (`header`, `nav`, `aside`, `main`) provide predictable structure for assistive tech.
+- `nav` uses `aria-label="Primary"` and `aside` uses `aria-label="Sidebar"`.
+- Links and buttons include `focus-visible` outlines for keyboard navigation.
+
+### Visual testing (Storybook)
+
+Storybook is configured to preview components in isolation.
+
+```powershell
+npm install
+npm run storybook
+```
+
+Stories live next to components (example: `src/components/ui/Button.stories.tsx`).
+
+### Reflection
+
+- Reusable layout primitives reduce UI drift as routes grow.
+- Centralized components improve maintainability (one change updates everywhere).
+- Shared accessibility patterns (landmarks, focus styling) scale better than per-page fixes.
+
+---
+
+## State Management (Context + Hooks)
+
+This project includes a lightweight global state setup using React Context API and custom hooks for:
+
+- **Auth state** (demo): current user + login/logout
+- **UI state**: theme mode + sidebar open/close
+
+### Folder structure
+
+```
+src/
+  context/
+    AuthContext.tsx
+    UIContext.tsx
+  hooks/
+    useAuth.ts
+    useUI.ts
+```
+
+### State flow (high level)
+
+`AuthProvider/UIProvider → Context Value → useAuthContext/useUIContext → useAuth/useUI → Components`
+
+Providers are mounted globally in `src/app/layout.tsx`, so any client component can access state.
+
+### Code snippets
+
+Auth hook:
+
+```ts
+import { useAuthContext } from "@/context/AuthContext";
+
+export function useAuth() {
+  const { user, login, logout } = useAuthContext();
+  return { isAuthenticated: Boolean(user), user, login, logout };
+}
+```
+
+UI hook:
+
+```ts
+import { useUIContext } from "@/context/UIContext";
+
+export function useUI() {
+  const { theme, toggleTheme, sidebarOpen, toggleSidebar } = useUIContext();
+  return { theme, toggleTheme, sidebarOpen, toggleSidebar };
+}
+```
+
+### Evidence (console logs)
+
+These context actions log state transitions for quick verification in DevTools:
+
+- `User logged in: KalviumUser`
+- `User logged out`
+- `Theme toggled`
+- `Sidebar toggled`
+
+### Debugging & performance notes
+
+- Inspect provider values via React DevTools → Components.
+- Context changes re-render consumers; keep provider values memoized and callbacks stable.
+- For larger UI state, consider `useReducer` to make state transitions predictable.
+
+### Reflection
+
+- Context removes prop-drilling and keeps shared logic centralized.
+- Custom hooks (`useAuth`, `useUI`) keep components declarative and consistent.
+- Overusing a single “mega-context” can cause unnecessary re-renders; split contexts by concern.
+
+---
+
+## Client-side Data Fetching (SWR)
+
+This project demonstrates client-side data fetching using SWR (stale-while-revalidate) on the `/users` page.
+
+### Install & run
+
+```powershell
+npm install
+npm run dev
+```
+
+### Files
+
+- Fetch helper: `src/lib/fetcher.ts`
+- SWR list page: `src/app/users/page.tsx`
+- Optimistic mutation UI: `src/app/users/AddUser.tsx`
+
+### SWR keys
+
+SWR keys identify cached resources. This app uses the key below to map to the users list API:
+
+- Key: `/api/users?page=1&limit=10`
+- Endpoint: `GET /api/users?page=1&limit=10`
+
+### Revalidation
+
+The users list uses `revalidateOnFocus: true` so data refreshes when the tab regains focus.
+
+### Mutation & optimistic UI
+
+`AddUser` performs an optimistic update:
+
+1. Updates the SWR cache immediately (UI updates instantly)
+2. Sends `POST /api/users`
+3. Revalidates the list key to sync with the server
+
+### Cache hits/misses (logs)
+
+- SWR cache keys are logged in the browser console from the `/users` page.
+- The API itself also logs Redis cache hits/misses for `GET /api/users`.
+
+### Reflection
+
+- SWR keeps the UI responsive by showing cached data and revalidating in the background.
+- Optimistic updates improve UX but require careful rollback/revalidation on failure.
+- Compared to raw `fetch`, SWR reduces boilerplate for caching, refetching, and shared state between components.
+
 **Project Overview**
 
 - **Stack:** Next.js 16 (TypeScript) with App Router and Tailwind CSS.
@@ -1195,464 +1397,117 @@ To ensure query health in production (AWS/Vercel):
   ```bash
   docker compose down -v --rmi all
   ```
+
 - **Windows-specific**: Ensure Docker Desktop is running with WSL 2 backend; if file sharing prompts appear, allow the project drive. Antivirus or firewall can slow bind mounts; prefer image builds over host mounts for production-like runs.
 
 ---
 
-## 📧 Email Service Integration (SendGrid)
+## Form Handling & Validation (React Hook Form + Zod)
 
-This project integrates **SendGrid** as a transactional email service to send automated notifications such as signup confirmations, password resets, and activity alerts.
+This project implements production-ready form handling using **React Hook Form** for state management and **Zod** for schema-based validation.
 
-### 🎯 Why Transactional Emails Matter
+### Stack
 
-Transactional emails are critical for user engagement and trust. Unlike marketing emails, they are trigger-based and sent automatically by your backend in response to user actions.
+- **react-hook-form**: Performant form state management with minimal re-renders
+- **zod**: TypeScript-first schema validation
+- **@hookform/resolvers**: Seamless integration between React Hook Form and Zod
 
-**Common Use Cases:**
+### Implementation
 
-| Event | Email Type |
-|---|---|
-| User signs up | Welcome email |
-| Password reset request | Reset link |
-| Booking confirmation | Confirmation details |
-| Payment success | Invoice/receipt |
-| Account alert | Security notification |
+**Validation Schemas** (`src/schemas/`)
 
-### 🚀 Provider Choice: SendGrid
+Zod schemas define validation rules and automatically generate TypeScript types:
 
-**Why SendGrid?**
+```typescript
+export const signupSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters long"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters long"),
+});
 
-- **Free Tier**: 100 emails/day (perfect for development and small apps)
-- **Easy Setup**: No domain verification required for sandbox testing
-- **Developer Experience**: Simple API with excellent documentation
-- **Reliability**: Industry-standard email delivery service
-- **Monitoring**: Built-in dashboard for tracking delivery, bounces, and spam reports
-
-**Alternative**: AWS SES is also supported but requires domain verification and more complex setup.
-
-### 📋 Setup Instructions
-
-#### 1. Create SendGrid Account
-
-1. Sign up at [sendgrid.com](https://sendgrid.com)
-2. Navigate to **Settings → Sender Authentication**
-3. Verify your sender email address (check your inbox for verification email)
-4. Go to **Settings → API Keys**
-5. Click **Create API Key**
-6. Choose **Full Access** permissions
-7. Copy the generated API key (you won't see it again!)
-
-#### 2. Configure Environment Variables
-
-Add the following to your `.env.local` file:
-
-```env
-# SendGrid Email Service
-SENDGRID_API_KEY=SG.your_actual_api_key_here
-SENDGRID_SENDER=no-reply@yourdomain.com
+export type SignupFormData = z.infer<typeof signupSchema>;
 ```
 
-**Important**: The `SENDGRID_SENDER` must be the email address you verified in step 1.
+**Reusable Components** (`src/components/ui/FormInput.tsx`)
 
-#### 3. Install Dependencies
+Generic form input component with built-in accessibility:
 
-The SendGrid SDK is already installed. If needed:
+- Proper label-input association (`htmlFor`, `id`)
+- ARIA attributes (`aria-invalid`, `aria-describedby`)
+- Visual feedback (red border for errors, blue for valid)
+- TypeScript generics for type-safe field names
 
-```powershell
-npm install @sendgrid/mail
-```
+**Form Pages**
 
-### 📁 Project Structure
+- `/signup` - Signup form with name, email, and password validation
+- `/contact` - Contact form demonstrating reusable components
 
-```
-src/
-├── app/
-│   └── api/
-│       └── email/
-│           └── route.ts          # Email API endpoint
-└── lib/
-    └── emailTemplates.ts          # Reusable email templates
-scripts/
-└── test-email.ts                  # Test script with examples
-```
+### Key Features
 
-### 🔌 API Endpoint
+✅ **Real-time validation** on blur  
+✅ **Type-safe** forms with automatic type inference  
+✅ **Accessible** with ARIA attributes and semantic HTML  
+✅ **Reusable** schemas work on both client and server  
+✅ **Minimal re-renders** via React Hook Form optimization  
+✅ **Consistent error handling** with custom messages
 
-**POST /api/email**
+### Usage Example
 
-Send a transactional email via SendGrid.
+```tsx
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signupSchema, SignupFormData } from "@/schemas/signupSchema";
 
-**Request Body:**
+export default function SignupPage() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+  });
 
-```json
-{
-  "to": "user@example.com",
-  "subject": "Welcome to Sparks Rentals!",
-  "message": "<h1>HTML email content</h1>",
-  "from": "no-reply@yourdomain.com"  // optional, defaults to SENDGRID_SENDER
+  const onSubmit = (data: SignupFormData) => {
+    console.log("Form Submitted:", data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register("name")} aria-invalid={!!errors.name} />
+      {errors.name && <p role="alert">{errors.name.message}</p>}
+      {/* ... */}
+    </form>
+  );
 }
 ```
 
-**Success Response (200):**
-
-```json
-{
-  "success": true,
-  "messageId": "01010189b2example123",
-  "statusCode": 202,
-  "timestamp": "2025-12-30T08:45:00.000Z"
-}
-```
-
-**Error Response (400/500):**
-
-```json
-{
-  "success": false,
-  "error": {
-    "message": "Invalid email data",
-    "code": "VALIDATION_ERROR",
-    "details": [
-      { "field": "to", "message": "Invalid recipient email address" }
-    ]
-  }
-}
-```
-
-**GET /api/email** (Health Check)
-
-Check if the email service is properly configured.
-
-```bash
-curl http://localhost:3000/api/email
-```
-
-Response:
-
-```json
-{
-  "service": "SendGrid Email Service",
-  "configured": true,
-  "sender": "no-reply@yourdomain.com",
-  "timestamp": "2025-12-30T08:45:00.000Z"
-}
-```
-
-### 📧 Email Templates
-
-The project includes four pre-built, mobile-responsive HTML email templates:
-
-#### 1. Welcome Email
-
-```ts
-import { welcomeTemplate } from '@/lib/emailTemplates';
-
-const htmlMessage = welcomeTemplate("Alice Johnson");
-```
-
-**Features:**
-- Personalized greeting with user's name
-- Professional gradient header
-- Call-to-action button to dashboard
-- Responsive design with inline CSS
-
-#### 2. Password Reset Email
-
-```ts
-import { passwordResetTemplate } from '@/lib/emailTemplates';
-
-const htmlMessage = passwordResetTemplate(
-  "Bob Smith",
-  "https://app.kalvium.community/reset-password?token=abc123",
-  "1 hour"
-);
-```
-
-**Features:**
-- Security-focused messaging
-- Time-limited reset link
-- Warning banner for unsolicited requests
-- Fallback link for email clients that don't support buttons
-
-#### 3. Notification Email
-
-```ts
-import { notificationTemplate } from '@/lib/emailTemplates';
-
-const htmlMessage = notificationTemplate(
-  "Charlie Davis",
-  "New Booking Request",
-  "<p>You have a new booking request for <strong>Sunset Villa</strong>.</p>",
-  "https://app.kalvium.community/bookings/123",
-  "View Booking"
-);
-```
-
-**Features:**
-- Flexible content area
-- Optional call-to-action button
-- Consistent branding
-
-#### 4. Simple Template
-
-```ts
-import { simpleTemplate } from '@/lib/emailTemplates';
-
-const htmlMessage = simpleTemplate(
-  "Test Email",
-  "<h1>Hello World!</h1><p>This is a test.</p>"
-);
-```
-
-**Features:**
-- Minimal styling for basic notifications
-- Fast to render
-- Good for system alerts
-
-### 🧪 Testing the Email Service
-
-#### Method 1: Using curl
-
-```bash
-# Test with welcome email
-curl -X POST http://localhost:3000/api/email \
-  -H "Content-Type: application/json" \
-  -d '{
-    "to": "your-email@example.com",
-    "subject": "Welcome to Sparks Rentals!",
-    "message": "<h1>Hello from Sparks Rentals! 🚀</h1><p>This is a test email.</p>"
-  }'
-```
-
-#### Method 2: Using the test script
-
-```powershell
-npm run email:test
-```
-
-This will display example curl commands for all template types.
-
-#### Method 3: Using Postman
-
-1. Create a new POST request to `http://localhost:3000/api/email`
-2. Set header: `Content-Type: application/json`
-3. Add request body (see examples above)
-4. Send and check console for message ID
-
-### 📊 Expected Console Output
-
-When an email is sent successfully, you'll see:
-
-```
-📧 Sending email...
-   To: user@example.com
-   From: no-reply@yourdomain.com
-   Subject: Welcome to Sparks Rentals!
-✅ Email sent successfully!
-   Message ID: 01010189b2example123
-   Status Code: 202
-```
-
-### 🔍 Verification Checklist
-
-- [ ] SendGrid account created and verified
-- [ ] API key generated with Full Access permissions
-- [ ] Environment variables configured in `.env.local`
-- [ ] Development server running (`npm run dev`)
-- [ ] Test email sent successfully via API
-- [ ] Email received in inbox (check spam folder if not found)
-- [ ] Console logs show message ID
-- [ ] SendGrid dashboard shows email activity
-
-### 🏭 Sandbox vs Production
-
-#### Sandbox Mode (Development)
-
-- **Free tier**: 100 emails/day
-- **Sender verification**: Only verified email addresses can send
-- **Recipient verification**: In sandbox, only verified emails can receive
-- **Rate limits**: Lower limits to prevent abuse
-- **Best for**: Development and testing
-
-#### Production Mode
-
-- **Domain verification**: Verify your domain (SPF/DKIM records)
-- **Higher limits**: Depends on your SendGrid plan
-- **Any recipient**: Can send to any valid email address
-- **Sender reputation**: Monitor bounce rates and spam reports
-- **Best for**: Live applications with real users
-
-**To move to production:**
-
-1. Verify your domain in SendGrid (Settings → Sender Authentication)
-2. Set up SPF and DKIM DNS records
-3. Request higher sending limits if needed
-4. Monitor SendGrid dashboard for delivery metrics
-
-### ⚡ Rate Limiting & Performance
-
-#### SendGrid Rate Limits
-
-- **Free tier**: 100 emails/day
-- **Essentials plan**: 40,000 emails/month
-- **Pro plan**: 100,000+ emails/month
-
-#### Handling High Volume
-
-For applications sending 10,000+ emails/day:
-
-1. **Implement a Queue System**:
-   - Use Redis or a message queue (RabbitMQ, AWS SQS)
-   - Process emails asynchronously in batches
-   - Retry failed sends with exponential backoff
-
-2. **Batch Sending**:
-   - SendGrid supports sending to multiple recipients
-   - Use personalization for bulk emails
-
-3. **Rate Limiting**:
-   ```ts
-   // Example: Limit to 10 emails per second
-   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-   
-   for (const email of emails) {
-     await sendEmail(email);
-     await delay(100); // 10 emails/sec
-   }
-   ```
-
-4. **Monitor Quotas**:
-   - Track daily/monthly email counts
-   - Alert when approaching limits
-   - Implement graceful degradation
-
-### 🛡️ Bounce Handling & Deliverability
-
-#### Types of Bounces
-
-- **Hard Bounce**: Permanent failure (invalid email, domain doesn't exist)
-- **Soft Bounce**: Temporary failure (mailbox full, server down)
-- **Spam Reports**: Recipient marked email as spam
-
-#### Best Practices
-
-1. **Monitor SendGrid Dashboard**:
-   - Check bounce rates (should be < 5%)
-   - Review spam reports
-   - Track delivery rates
-
-2. **Handle Bounces**:
-   - Remove hard-bounced emails from your database
-   - Retry soft bounces with backoff
-   - Unsubscribe users who mark as spam
-
-3. **Improve Deliverability**:
-   - Use verified domain (not generic Gmail/Yahoo)
-   - Set up SPF, DKIM, and DMARC records
-   - Avoid spam trigger words in subject lines
-   - Include unsubscribe link (required by law)
-   - Maintain good sender reputation
-
-4. **SendGrid Webhooks** (Advanced):
-   ```ts
-   // POST /api/webhooks/sendgrid
-   // Receive real-time events: delivered, bounced, opened, clicked
-   ```
-
-### 🔐 Security Best Practices
-
-1. **Never commit API keys**:
-   - Use `.env.local` (gitignored)
-   - Rotate keys regularly
-   - Use different keys for dev/staging/prod
-
-2. **Validate input**:
-   - Use Zod schemas to validate email addresses
-   - Sanitize HTML content to prevent injection
-   - Rate limit API endpoint to prevent abuse
-
-3. **Monitor for abuse**:
-   - Log all email sends
-   - Alert on unusual patterns
-   - Implement CAPTCHA for public forms
-
-4. **Sender authentication**:
-   - Verify domain ownership
-   - Configure SPF/DKIM records
-   - Monitor sender reputation
-
-### 🐛 Troubleshooting
-
-#### Email not delivered
-
-- **Check spam folder**: Emails from new senders often go to spam
-- **Verify sender email**: Must match verified address in SendGrid
-- **Check SendGrid dashboard**: Look for bounce/spam reports
-- **Sandbox mode**: Verify recipient email is also verified in SendGrid
-
-#### API returns 401/403
-
-- **Invalid API key**: Double-check `SENDGRID_API_KEY` in `.env.local`
-- **Key permissions**: Ensure API key has "Full Access" or "Mail Send" permission
-- **Expired key**: Regenerate API key in SendGrid dashboard
-
-#### API returns 400 (Validation Error)
-
-- **Invalid email format**: Check email addresses are valid
-- **Missing required fields**: Ensure `to`, `subject`, and `message` are provided
-- **Check console logs**: Detailed validation errors are logged
-
-#### Slow email sending
-
-- **Network latency**: SendGrid API calls take 200-500ms
-- **Use async**: Don't block user requests waiting for email
-- **Implement queue**: For bulk sends, use background jobs
-
-### 📈 Monitoring & Logging
-
-#### Console Logs
-
-Every email send logs:
-- Recipient, sender, subject
-- Success/failure status
-- Message ID (for tracking)
-- Error details (if failed)
-
-#### SendGrid Dashboard
-
-Monitor:
-- **Activity Feed**: Real-time email events
-- **Stats**: Delivery rates, bounces, spam reports
-- **Suppressions**: Blocked/bounced email addresses
-- **Alerts**: Set up notifications for issues
-
-#### Production Logging
-
-For production, consider:
-- Storing email logs in database
-- Tracking user email preferences
-- Monitoring daily/monthly quotas
-- Alerting on high bounce rates
-
-### 🎯 Reflection: Production Readiness
-
-**What makes this implementation production-ready?**
-
-1. **Error Handling**: Comprehensive error handling with detailed logging
-2. **Validation**: Input validation using Zod schemas
-3. **Security**: API keys in environment variables, never committed
-4. **Monitoring**: Console logs + SendGrid dashboard for observability
-5. **Templates**: Reusable, mobile-responsive HTML templates
-6. **Scalability**: Clear path to queue-based processing for high volume
-7. **Documentation**: Complete setup and troubleshooting guide
-
-**Next Steps for Scale:**
-
-- Implement email queue (Redis + Bull/BullMQ)
-- Add webhook handlers for delivery tracking
-- Create admin dashboard for email analytics
-- Implement retry logic with exponential backoff
-- Add email preference management for users
-- Set up monitoring alerts for bounce rates
-- Consider multi-provider fallback (SendGrid + AWS SES)
-
----
+### Accessibility
+
+- Semantic HTML (`<label>`, `<form>`, proper button types)
+- ARIA attributes for screen readers
+- Keyboard navigation support
+- High contrast error messages
+- Focus visible styles
+
+### Why Schema-Based Validation?
+
+**vs Manual Validation:**
+
+| Feature | Schema-Based (Zod) | Manual |
+|---------|-------------------|--------|
+| Type Safety | ✅ Automatic | ❌ Manual types |
+| Reusability | ✅ Client + Server | ❌ Duplicate logic |
+| Maintainability | ✅ Single source of truth | ❌ Scattered checks |
+| Composability | ✅ Easy to extend | ❌ Verbose |
+| Runtime Safety | ✅ Built-in | ❌ Custom code |
+
+### Testing
+
+All forms tested with:
+- Empty field validation
+- Individual field validation (length, format)
+- Successful submission with valid data
+- Loading states and form reset
+- Keyboard navigation and screen reader compatibility
+
+See [walkthrough.md](file:///C:/Users/MAHIL%20MITHRAN/.gemini/antigravity/brain/d20f0778-58e0-4d45-9fc2-455a8383c60a/walkthrough.md) for detailed testing results and screenshots.

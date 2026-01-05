@@ -44,6 +44,18 @@ export function requireAuth(req: Request) {
     };
   }
 
+  // Demo-friendly behavior: accept the mock token for local lessons.
+  if (process.env.NODE_ENV !== "production" && token === "mock.jwt.token") {
+    return {
+      ok: true as const,
+      payload: {
+        id: 0,
+        email: "demo@example.com",
+        role: "CUSTOMER",
+      },
+    };
+  }
+
   try {
     const payload = verifyAccessToken(token);
     return { ok: true as const, payload };
