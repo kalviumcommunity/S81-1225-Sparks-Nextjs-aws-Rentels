@@ -1460,3 +1460,245 @@ Add screenshots to this README (or a `docs/` folder) showing:
 - **SEO-friendly structure**: Clean, hierarchical URLs (like `/users/42`) are readable and indexable, and map naturally to content.
 - **Breadcrumbs improve UX**: Breadcrumb navigation helps users understand where they are and move around quickly (especially on deep routes).
 - **Graceful error states**: A custom 404 page and param validation (`notFound()`) prevent broken or confusing experiences.
+
+---
+
+## Form Handling & Validation (React Hook Form + Zod)
+
+This project implements production-grade form handling using **React Hook Form** for state management and **Zod** for schema-based validation. This combination provides type-safe, performant forms with minimal re-renders and declarative validation rules.
+
+### Why React Hook Form + Zod?
+
+| Tool | Purpose | Key Benefit |
+|------|---------|-------------|
+| **React Hook Form** | Manages form state and validation with minimal re-renders | Lightweight and performant |
+| **Zod** | Provides declarative schema validation | Type-safe and reusable schemas |
+| **@hookform/resolvers** | Connects Zod to React Hook Form seamlessly | Simplifies schema integration |
+
+### Installation
+
+The following packages are installed:
+
+```bash
+npm install react-hook-form zod @hookform/resolvers
+```
+
+### Project Structure
+
+```
+src/
+  lib/
+    schemas/
+      signupSchema.ts       # Signup form validation schema
+      contactSchema.ts      # Contact form validation schema
+  components/
+    ui/
+      FormInput.tsx         # Reusable form input component
+  app/
+    signup/
+      page.tsx             # Signup form page
+    contact/
+      page.tsx             # Contact form page
+```
+
+### Validation Schemas
+
+Schemas are defined in `src/lib/schemas/` and follow a consistent pattern:
+
+**Signup Schema** ([signupSchema.ts](file:///c:/Users/MAHIL%20MITHRAN/OneDrive/Desktop/S81-1225-Sparks-Nextjs-aws-Rentels/src/lib/schemas/signupSchema.ts)):
+
+```ts
+import { z } from "zod";
+
+export const signupSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters long"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters long"),
+});
+
+export type SignupFormData = z.infer<typeof signupSchema>;
+```
+
+**Contact Schema** ([contactSchema.ts](file:///c:/Users/MAHIL%20MITHRAN/OneDrive/Desktop/S81-1225-Sparks-Nextjs-aws-Rentels/src/lib/schemas/contactSchema.ts)):
+
+```ts
+import { z } from "zod";
+
+export const contactSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters long"),
+  email: z.string().email("Please enter a valid email address"),
+  message: z.string().min(10, "Message must be at least 10 characters long"),
+});
+
+export type ContactFormData = z.infer<typeof contactSchema>;
+```
+
+### Reusable Form Components
+
+**FormInput Component** ([FormInput.tsx](file:///c:/Users/MAHIL%20MITHRAN/OneDrive/Desktop/S81-1225-Sparks-Nextjs-aws-Rentels/src/components/ui/FormInput.tsx)):
+
+A fully accessible, reusable input component with:
+- Proper label association via `htmlFor`
+- Error message display with conditional rendering
+- ARIA attributes for accessibility (`aria-invalid`, `aria-describedby`)
+- Visual feedback for validation states (red border on error)
+- Support for different input types (text, email, password, etc.)
+
+```tsx
+<FormInput
+  label="Email Address"
+  name="email"
+  type="email"
+  register={register}
+  error={errors.email?.message}
+  placeholder="you@example.com"
+/>
+```
+
+### Form Implementation Pattern
+
+All forms follow this consistent pattern:
+
+```tsx
+"use client";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signupSchema, SignupFormData } from "@/lib/schemas/signupSchema";
+import FormInput from "@/components/ui/FormInput";
+
+export default function SignupPage() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+  });
+
+  const onSubmit = (data: SignupFormData) => {
+    console.log("Form Submitted:", data);
+    alert(`Welcome, ${data.name}!`);
+    reset();
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <FormInput
+        label="Full Name"
+        name="name"
+        register={register}
+        error={errors.name?.message}
+      />
+      {/* More fields... */}
+      <button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Submitting..." : "Sign Up"}
+      </button>
+    </form>
+  );
+}
+```
+
+### Key Features
+
+1. **Real-time Validation**: Errors appear instantly as users interact with fields
+2. **Type Safety**: TypeScript types are automatically inferred from Zod schemas
+3. **Minimal Re-renders**: React Hook Form only re-renders when necessary
+4. **Accessible**: Full ARIA support and semantic HTML
+5. **Reusable**: FormInput component works across all forms
+6. **Consistent Error Handling**: All validation messages come from schemas
+
+### Live Forms
+
+Visit these routes to see the forms in action:
+
+- **Signup Form**: [http://localhost:3000/signup](http://localhost:3000/signup)
+- **Contact Form**: [http://localhost:3000/contact](http://localhost:3000/contact)
+
+### Validation Examples
+
+**Signup Form Validation States**:
+
+![Initial Signup Form](file:///C:/Users/MAHIL%20MITHRAN/.gemini/antigravity/brain/20c00e12-284b-415c-aa13-f1ea5767827a/initial_signup_form_1767608145559.png)
+
+*Initial state of the signup form with clean, modern UI*
+
+![Signup Validation Errors](file:///C:/Users/MAHIL%20MITHRAN/.gemini/antigravity/brain/20c00e12-284b-415c-aa13-f1ea5767827a/signup_validation_errors_1767608163870.png)
+
+*Validation errors displayed when submitting empty fields*
+
+**Test Scenarios**:
+
+1. **Empty fields** → Shows required field errors for all inputs
+2. **Invalid email** (e.g., "test") → Shows "Please enter a valid email address"
+3. **Short password** (e.g., "123") → Shows "Password must be at least 6 characters long"
+4. **Valid submission** → Logs data to console, shows success alert, resets form
+
+**Console Output** (successful submission):
+
+```
+Form Submitted: {
+  name: "Alice Johnson",
+  email: "alice@example.com",
+  password: "secret123"
+}
+```
+
+### Accessibility Features
+
+Our forms implement comprehensive accessibility:
+
+- **Semantic HTML**: Proper `<label>`, `<input>`, and `<form>` elements
+- **Label Association**: Every input has a connected label via `htmlFor` and `id`
+- **ARIA Attributes**:
+  - `aria-invalid={true}` on fields with errors
+  - `aria-describedby` linking inputs to error messages
+  - `role="alert"` on error messages for screen reader announcements
+- **Keyboard Navigation**: Full tab order support with visible focus states
+- **Visual Feedback**: Red borders and error text for invalid fields
+- **Disabled State**: Submit button disabled during submission to prevent double-submits
+
+### Reflection: Benefits of Schema-Based Validation
+
+**Long-term advantages of Zod schemas in large applications**:
+
+1. **Single Source of Truth**: Validation rules live in one place, not scattered across components
+2. **Type Safety**: TypeScript types are automatically derived from schemas, eliminating type/validation mismatches
+3. **Reusability**: Same schema can validate on client (forms) and server (API routes)
+4. **Maintainability**: Changing validation rules requires updating only the schema
+5. **Testability**: Schemas can be unit tested independently of UI components
+6. **Documentation**: Schemas serve as self-documenting contracts for data shapes
+7. **Consistency**: All forms follow the same validation patterns and error messaging
+8. **Scalability**: Adding new fields or forms is fast and follows established patterns
+
+**Compared to inline validation**:
+- Inline: `if (!email.includes('@')) setError('Invalid email')`
+- Schema: `email: z.string().email("Invalid email")`
+
+The schema approach is more declarative, type-safe, and maintainable at scale.
+
+### Component Reusability Impact
+
+The `FormInput` component demonstrates how reusable patterns improve scalability:
+
+- **Before**: Each form duplicates label, input, error display logic (~20 lines per field)
+- **After**: Single `<FormInput />` component (~3 lines per field)
+- **Benefit**: 85% reduction in code, consistent accessibility, easier to update globally
+
+**Example**: Adding a new field to any form:
+
+```tsx
+<FormInput
+  label="Phone Number"
+  name="phone"
+  type="tel"
+  register={register}
+  error={errors.phone?.message}
+/>
+```
+
+This pattern scales to dozens of forms without duplicating accessibility or styling logic.
+
+---
+
