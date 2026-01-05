@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 const links = [
@@ -8,6 +10,7 @@ const links = [
 export default function Sidebar() {
   return (
     <aside
+      id="sidebar"
       aria-label="Sidebar"
       className="w-64 shrink-0 border-r border-black/10 bg-zinc-50 px-4 py-6"
     >
