@@ -70,6 +70,11 @@ export async function middleware(req: NextRequest) {
     );
   }
 
+  // Demo-friendly behavior: allow the mock token string in non-production.
+  if (process.env.NODE_ENV !== "production" && token === "mock.jwt.token") {
+    return NextResponse.next();
+  }
+
   try {
     const { payload } = await verifyJwt(token);
 
