@@ -2098,3 +2098,29 @@ A secure `.env` setup is a professional developer's safety net—it protects not j
 
 ---
 
+
+## Responsive & Themed Design
+
+### Configuration
+We implemented a custom TailwindCSS v4 configuration in globals.css using the @theme directive:
+
+- **Breakpoints**: 
+  - sm: 640px
+  - md: 768px
+  - lg: 1024px
+  - xl: 1280px
+  
+- **Brand Colors**:
+  - Primary: #3b82f6 (Blue)
+  - Secondary: #06b6d4 (Cyan)
+  - Accent: #8b5cf6 (Purple)
+
+### Features
+- **Dark Mode**: Fully supported with dark: variant and localStorage persistence.
+- **Theme Toggle**: Accessible button with smooth transition and icon animation.
+- **Responsive Layouts**: Mobile-first design that adapts to all screen sizes.
+
+### Accessibility
+- **Contrast**: All colors meet WCAG AA standards.
+- **Focus States**: Visible focus rings for keyboard navigation.
+- **Reduced Motion**: Respects system preferences (though we added smooth transitions for theme switching).
