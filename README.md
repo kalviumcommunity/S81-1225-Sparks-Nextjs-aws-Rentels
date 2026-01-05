@@ -201,6 +201,55 @@ These context actions log state transitions for quick verification in DevTools:
 - Custom hooks (`useAuth`, `useUI`) keep components declarative and consistent.
 - Overusing a single “mega-context” can cause unnecessary re-renders; split contexts by concern.
 
+---
+
+## Client-side Data Fetching (SWR)
+
+This project demonstrates client-side data fetching using SWR (stale-while-revalidate) on the `/users` page.
+
+### Install & run
+
+```powershell
+npm install
+npm run dev
+```
+
+### Files
+
+- Fetch helper: `src/lib/fetcher.ts`
+- SWR list page: `src/app/users/page.tsx`
+- Optimistic mutation UI: `src/app/users/AddUser.tsx`
+
+### SWR keys
+
+SWR keys identify cached resources. This app uses the key below to map to the users list API:
+
+- Key: `/api/users?page=1&limit=10`
+- Endpoint: `GET /api/users?page=1&limit=10`
+
+### Revalidation
+
+The users list uses `revalidateOnFocus: true` so data refreshes when the tab regains focus.
+
+### Mutation & optimistic UI
+
+`AddUser` performs an optimistic update:
+
+1. Updates the SWR cache immediately (UI updates instantly)
+2. Sends `POST /api/users`
+3. Revalidates the list key to sync with the server
+
+### Cache hits/misses (logs)
+
+- SWR cache keys are logged in the browser console from the `/users` page.
+- The API itself also logs Redis cache hits/misses for `GET /api/users`.
+
+### Reflection
+
+- SWR keeps the UI responsive by showing cached data and revalidating in the background.
+- Optimistic updates improve UX but require careful rollback/revalidation on failure.
+- Compared to raw `fetch`, SWR reduces boilerplate for caching, refetching, and shared state between components.
+
 **Project Overview**
 
 - **Stack:** Next.js 16 (TypeScript) with App Router and Tailwind CSS.
