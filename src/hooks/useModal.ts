@@ -1,14 +1,14 @@
 /**
  * useModal Hook
- * 
+ *
  * A custom hook for managing modal state.
  * Provides open, close, and toggle functions for modal dialogs.
- * 
+ *
  * @example
  * ```tsx
  * function MyComponent() {
  *   const { isOpen, openModal, closeModal, toggleModal } = useModal();
- * 
+ *
  *   return (
  *     <>
  *       <button onClick={openModal}>Open Modal</button>
@@ -21,26 +21,26 @@
  * ```
  */
 
-'use client';
+"use client";
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
 
 export interface UseModalReturn {
   /**
    * Whether the modal is currently open
    */
   isOpen: boolean;
-  
+
   /**
    * Open the modal
    */
   openModal: () => void;
-  
+
   /**
    * Close the modal
    */
   closeModal: () => void;
-  
+
   /**
    * Toggle the modal open/closed state
    */
@@ -49,7 +49,7 @@ export interface UseModalReturn {
 
 /**
  * Hook for managing modal state
- * 
+ *
  * @param defaultOpen - Initial open state (default: false)
  * @returns Modal state and control functions
  */

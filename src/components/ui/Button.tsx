@@ -4,8 +4,10 @@ import type { ButtonHTMLAttributes } from "react";
 
 export type ButtonVariant = "primary" | "secondary";
 
-export interface ButtonProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className"> {
+export interface ButtonProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "className"
+> {
   label: string;
   variant?: ButtonVariant;
 }

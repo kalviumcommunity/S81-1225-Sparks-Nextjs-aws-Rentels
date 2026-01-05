@@ -1,0 +1,87 @@
+﻿
+> s81-1225-sparks-nextjs-aws-rentels@0.1.0 lint
+> eslint
+
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\prisma\seed.ts
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\scripts\test-performance.ts
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\scripts\test-prisma.mjs
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\scripts\test-transaction.ts
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\app\contact\page.tsx
+  57:29  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\app\examples\delete-modal\page.tsx
+  178:23  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  178:30  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  180:23  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  180:30  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  180:50  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  180:58  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\app\users\page.tsx
+  24:7  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\components\ResponsiveHero.tsx
+  23:47  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\components\ui\FormInput.tsx
+   2:27  warning  'FieldError' is defined but never used    @typescript-eslint/no-unused-vars
+  15:29  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\components\ui\Modal.tsx
+  106:9  error  Strings must use doublequote  quotes
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\context\AuthContext.tsx
+  26:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  33:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\context\ThemeProvider.tsx
+  28:5  error  Error: Cannot access variable before it is declared
+
+`applyTheme` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\context\ThemeProvider.tsx:28:5
+  26 |     const initialTheme = storedTheme || systemTheme;
+  27 |     setThemeState(initialTheme);
+> 28 |     applyTheme(initialTheme);
+     |     ^^^^^^^^^^ `applyTheme` accessed before it is declared
+  29 |   }, []);
+  30 |
+  31 |   // Apply theme to document root
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\context\ThemeProvider.tsx:32:3
+  30 |
+  31 |   // Apply theme to document root
+> 32 |   const applyTheme = (newTheme: Theme) => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 33 |     const root = document.documentElement;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 34 |
+     ΓÇª
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 47 |     }, 100);
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 48 |   };
+     | ^^^^^ `applyTheme` is declared here
+  49 |
+  50 |   const setTheme = (newTheme: Theme) => {
+  51 |     setThemeState(newTheme);  react-hooks/immutability
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\context\UIContext.tsx
+  30:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  37:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\lib\logger.ts
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+Γ£û 22 problems (11 errors, 11 warnings)
+  1 error and 10 warnings potentially fixable with the `--fix` option.
+
