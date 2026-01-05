@@ -1702,3 +1702,399 @@ This pattern scales to dozens of forms without duplicating accessibility or styl
 
 ---
 
+
+##  Toasts, Modals, and Feedback UI
+
+This project implements interactive feedback layers (toasts, modals, loaders) that help users understand what's happening in the app. These UI elements make the application feel responsive, accessible, and human by clearly communicating success, error, and pending states.
+
+###  Dependencies
+
+- **react-hot-toast**: Lightweight toast notification library with excellent TypeScript support and accessibility features
+
+```powershell
+npm install react-hot-toast --legacy-peer-deps
+```
+
+###  Toast Notifications
+
+Toast notifications provide instant, non-blocking feedback for user actions.
+
+#### Implementation
+
+**Global Setup** ([src/app/layout.tsx](src/app/layout.tsx)):
+```tsx
+import { Toaster } from "react-hot-toast";
+import { toastConfig } from "@/lib/toast";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Toaster
+          position={toastConfig.position}
+          toastOptions={{
+            duration: toastConfig.duration,
+            style: toastConfig.style,
+            success: toastConfig.success,
+            error: toastConfig.error,
+            loading: toastConfig.loading,
+          }}
+        />
+      </body>
+    </html>
+  );
+}
+```
+
+**Usage** ([src/lib/toast.ts](src/lib/toast.ts)):
+```tsx
+import { toast } from '@/lib/toast';
+
+// Success notification
+toast.success('Data saved successfully!');
+
+// Error notification
+toast.error('Something went wrong!');
+
+// Loading notification
+const toastId = toast.loading('Saving...');
+// Later update it
+toast.success('Saved!', { id: toastId });
+
+// Promise-based toast
+toast.promise(
+  saveData(),
+  {
+    loading: 'Saving...',
+    success: 'Data saved!',
+    error: 'Failed to save',
+  }
+);
+```
+
+#### Accessibility Features
+
+- **ARIA live regions**: Toasts use `role="status"` and `aria-live="polite"` for screen reader announcements
+- **Auto-dismiss**: Toasts automatically disappear after 4 seconds (configurable)
+- **Non-blocking**: Users can continue interacting with the app while toasts are visible
+- **Color-coded**: Success (green), error (red), loading (blue) for visual clarity
+
+#### Integration Points
+
+Toasts are integrated in:
+- **Signup form** ([src/app/signup/page.tsx](src/app/signup/page.tsx)): Loading  Success/Error
+- **Login form** ([src/app/login/page.tsx](src/app/login/page.tsx)): Loading  Success/Error
+- **Contact form** ([src/app/contact/page.tsx](src/app/contact/page.tsx)): Loading  Success/Error
+
+###  Modal Component
+
+Modals provide blocking feedback for important user decisions and confirmations.
+
+#### Features
+
+- **Focus trap**: Focus stays inside the modal (keyboard users can't tab outside)
+- **Keyboard support**: Press `Esc` to close, `Tab` to navigate between elements
+- **Backdrop click**: Click outside the modal to close (can be disabled)
+- **Accessible**: Proper ARIA attributes (`aria-modal`, `aria-labelledby`, `aria-describedby`)
+- **Body scroll lock**: Prevents scrolling the page behind the modal
+
+#### Usage
+
+```tsx
+import { Modal } from '@/components/ui/Modal';
+import { useModal } from '@/hooks/useModal';
+
+function MyComponent() {
+  const { isOpen, openModal, closeModal } = useModal();
+
+  return (
+    <>
+      <button onClick={openModal}>Open Modal</button>
+      
+      <Modal
+        isOpen={isOpen}
+        onClose={closeModal}
+        title="Confirm Action"
+        description="Are you sure you want to proceed?"
+      >
+        <div className="flex gap-3">
+          <button onClick={closeModal}>Cancel</button>
+          <button onClick={handleConfirm}>Confirm</button>
+        </div>
+      </Modal>
+    </>
+  );
+}
+```
+
+#### Example: Delete Confirmation
+
+See [src/app/examples/delete-modal/page.tsx](src/app/examples/delete-modal/page.tsx) for a complete example demonstrating:
+1. Modal opens on button click
+2. Loader appears during async operation
+3. Toast shows success/error after completion
+4. Modal closes automatically
+
+###  Loader Component
+
+Loaders provide visual feedback for async operations.
+
+#### Features
+
+- **Multiple sizes**: Small, medium, large
+- **Overlay mode**: Full-page overlay with backdrop
+- **Accessible**: `role="status"` and `aria-live="polite"` for screen readers
+- **Optional text**: Display loading message below spinner
+
+#### Usage
+
+```tsx
+import { Loader } from '@/components/ui/Loader';
+
+// Inline loader
+<Loader size="small" />
+
+// Loader with text
+<Loader text="Loading data..." />
+
+// Full-page overlay
+<Loader overlay text="Processing..." />
+
+// In forms
+{isSubmitting && <Loader size="small" />}
+```
+
+###  Complete Feedback Flow
+
+The delete confirmation example demonstrates the complete feedback pattern:
+
+```tsx
+const handleDelete = async () => {
+  setIsDeleting(true);
+  const toastId = toast.loading('Deleting item...');
+  
+  try {
+    await deleteItem();
+    toast.success('Item deleted!', { id: toastId });
+    closeModal();
+  } catch (error) {
+    toast.error('Failed to delete', { id: toastId });
+  } finally {
+    setIsDeleting(false);
+  }
+};
+```
+
+**Flow**:
+1. User clicks "Delete"  **Modal** opens
+2. User clicks "Confirm"  **Loader** appears in modal
+3. **Toast** (loading) shows "Deleting item..."
+4. Operation completes  **Toast** updates to success/error
+5. **Modal** closes, **Loader** disappears
+
+###  UX Improvements
+
+**Before** (without feedback UI):
+- Users clicked buttons and wondered if anything happened
+- Errors appeared as browser alerts (jarring, inaccessible)
+- No indication of loading states
+- Destructive actions had no confirmation
+
+**After** (with feedback UI):
+- Clear, immediate feedback for all actions
+- Accessible notifications that work with screen readers
+- Visual loading indicators reduce perceived wait time
+- Confirmation modals prevent accidental deletions
+- Consistent, professional user experience
+
+###  Accessibility Compliance
+
+All feedback components follow WAI-ARIA best practices:
+
+| Component | ARIA Attributes | Keyboard Support |
+|-----------|----------------|------------------|
+| Toast | `role="status"`, `aria-live="polite"` | Auto-dismiss, no interaction needed |
+| Modal | `aria-modal="true"`, `aria-labelledby`, `aria-describedby` | Esc to close, Tab for focus trap |
+| Loader | `role="status"`, `aria-live="polite"`, `aria-label` | No interaction needed |
+
+---
+
+##  Enhanced Environment Variable Management
+
+This project uses a comprehensive environment variable setup to manage configuration and sensitive data securely across development, staging, and production environments.
+
+###  Files
+
+- **[env.example](env.example)**: Template with comprehensive documentation (committed to git)
+- **[.env.local.template](.env.local.template)**: Quick-start template with placeholder values
+- **`.env.local`**: Your actual local environment variables (gitignored, NEVER commit!)
+
+###  Quick Setup
+
+```powershell
+# Copy the template
+cp env.example .env.local
+
+# Fill in your actual values
+# Edit .env.local with your real secrets
+
+# Restart the dev server
+npm run dev
+```
+
+###  Environment Variables
+
+#### Required Variables
+
+These are essential for basic app functionality:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@localhost:5432/db` |
+| `JWT_SECRET` | Secret for JWT token signing (min 32 chars) | Generate with: `openssl rand -base64 32` |
+| `NODE_ENV` | Environment mode | `development` \| `staging` \| `production` |
+| `NEXT_PUBLIC_API_BASE_URL` | API base URL for client-side calls | `http://localhost:3000` |
+
+#### Optional Variables
+
+These enable specific features:
+
+**Caching** (improves performance):
+- `REDIS_URL`: Redis connection string (e.g., `redis://localhost:6379`)
+
+**File Uploads** (AWS S3):
+- `AWS_REGION`: AWS region (e.g., `us-east-1`)
+- `AWS_ACCESS_KEY_ID`: AWS access key
+- `AWS_SECRET_ACCESS_KEY`: AWS secret key
+- `S3_BUCKET_NAME`: S3 bucket name
+- `S3_BUCKET_REGION`: S3 bucket region
+
+**Email Service** (SendGrid):
+- `SENDGRID_API_KEY`: SendGrid API key
+- `SENDGRID_FROM_EMAIL`: Sender email address
+- `SENDGRID_FROM_NAME`: Sender name
+
+###  Security Best Practices
+
+#### 1. Never Commit Secrets
+
+`.env.local` is in `.gitignore` and will NEVER be committed:
+
+```gitignore
+# env files
+.env*
+!.env.example
+.env.local  # Explicitly listed for clarity
+```
+
+Verify with:
+```powershell
+git status  # .env.local should NOT appear
+```
+
+#### 2. Server-Only vs Client-Accessible
+
+**Server-only variables** (secure):
+- No prefix required
+- Only accessible in server-side code (API routes, Server Components)
+- Examples: `DATABASE_URL`, `JWT_SECRET`, `AWS_SECRET_ACCESS_KEY`
+
+**Client-accessible variables** (public):
+- Must start with `NEXT_PUBLIC_`
+- Exposed to the browser (visible in DevTools)
+- **NEVER put secrets here!**
+- Examples: `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_ENVIRONMENT`
+
+#### 3. Generate Strong Secrets
+
+```powershell
+# Generate a strong JWT secret (32+ characters)
+openssl rand -base64 32
+
+# Example output:
+# 8xK9mP2nQ5vR7wT1yU3zA6bC4dE8fG0hJ2kL5mN7pQ9=
+```
+
+#### 4. Environment-Specific Values
+
+Use different secrets for each environment:
+
+| Environment | JWT_SECRET | DATABASE_URL |
+|-------------|-----------|--------------|
+| Development | `dev_secret_123` | `postgresql://localhost:5432/dev_db` |
+| Staging | `staging_secret_xyz` | `postgresql://staging.db:5432/staging_db` |
+| Production | `prod_secret_abc` (strong, unique) | `postgresql://prod.db:5432/prod_db` |
+
+#### 5. Production Deployment
+
+For production, use secret management services:
+- **Vercel**: Environment Variables in project settings
+- **AWS**: AWS Secrets Manager or Parameter Store
+- **Docker**: Docker secrets or encrypted env files
+
+**Never** hardcode secrets in code or commit `.env.local` to git!
+
+###  What Could Go Wrong?
+
+**Scenario**: A teammate accidentally commits `.env.local` to GitHub.
+
+**Consequences**:
+- Database credentials exposed  unauthorized access
+- JWT secret leaked  attackers can forge tokens
+- AWS keys exposed  potential data breach or billing fraud
+- SendGrid API key leaked  spam emails sent from your account
+
+**How This Setup Prevents It**:
+1. `.gitignore` blocks `.env.local` from being committed
+2. `env.example` provides a safe template (no real secrets)
+3. Pre-commit hooks (Husky) can detect and block secret commits
+4. GitHub secret scanning alerts you if secrets are pushed
+
+**If It Happens**:
+1. Immediately rotate all exposed credentials
+2. Revoke the leaked JWT secret and generate a new one
+3. Delete AWS access keys and create new ones
+4. Regenerate SendGrid API key
+5. Force-push to remove the commit from git history (if caught early)
+
+###  Documentation in Code
+
+All environment variables are documented in [env.example](env.example) with:
+- Description of what the variable does
+- Example values (safe placeholders)
+- Where to get the value (e.g., AWS IAM Console)
+- Security notes and best practices
+- Required vs optional designation
+
+###  Verification
+
+Test that environment variables are properly loaded:
+
+```tsx
+// In a Server Component or API route
+console.log('Database URL:', process.env.DATABASE_URL);  //  Works
+console.log('JWT Secret:', process.env.JWT_SECRET);      //  Works
+
+// In a Client Component
+console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);  //  Works
+console.log('JWT Secret:', process.env.JWT_SECRET);        //  undefined (secure!)
+```
+
+Open browser DevTools  Console:
+- `NEXT_PUBLIC_*` variables are visible
+- Server-only variables are NOT visible (secure!)
+
+###  Reflection
+
+**Why This Matters**:
+- **Security**: Prevents accidental exposure of sensitive data
+- **Consistency**: Same setup process for all team members
+- **Scalability**: Easy to add new variables as features grow
+- **Compliance**: Follows industry best practices for secret management
+- **Developer Experience**: Clear documentation reduces onboarding friction
+
+A secure `.env` setup is a professional developer's safety net—it protects not just your app, but your entire team from data leaks and costly mistakes.
+
+---
+

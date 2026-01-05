@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema, SignupFormData } from "@/lib/schemas/signupSchema";
 import FormInput from "@/components/ui/FormInput";
+import { toast } from "@/lib/toast";
 
 /**
  * Signup Form Page
@@ -24,10 +25,29 @@ export default function SignupPage() {
         resolver: zodResolver(signupSchema),
     });
 
-    const onSubmit = (data: SignupFormData) => {
-        console.log("Form Submitted:", data);
-        alert(`Welcome, ${data.name}! Your account has been created.`);
-        reset(); // Reset form after successful submission
+    const onSubmit = async (data: SignupFormData) => {
+        const toastId = toast.loading('Creating your account...');
+
+        try {
+            // Simulate API call
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+
+            console.log("Form Submitted:", data);
+
+            toast.success(`Welcome, ${data.name}! Your account has been created.`, {
+                id: toastId,
+            });
+
+            reset(); // Reset form after successful submission
+
+            // Optional: Redirect to login or dashboard
+            // router.push('/login');
+        } catch (error) {
+            toast.error('Failed to create account. Please try again.', {
+                id: toastId,
+            });
+            console.error('Signup error:', error);
+        }
     };
 
     return (
