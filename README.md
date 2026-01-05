@@ -48,6 +48,87 @@ npm run dev
 - **Testability:** Pure functions in `lib` are straightforward to unit test; components remain presentational.
 - **Team velocity:** The `@/*` import alias and consistent conventions reduce friction, enabling faster iteration in future sprints.
 
+---
+
+## Layout & Component Architecture (Reusable UI)
+
+This project uses a small, reusable component hierarchy so navigation and spacing stay consistent across routes.
+
+### Recommended structure
+
+```
+src/
+  app/
+    layout.tsx
+    page.tsx
+    dashboard/
+      page.tsx
+  components/
+    layout/
+      Header.tsx
+      Sidebar.tsx
+      LayoutWrapper.tsx
+    ui/
+      Button.tsx
+    index.ts
+```
+
+### Component hierarchy
+
+`Header → Sidebar → LayoutWrapper → Page`
+
+`LayoutWrapper` is applied globally from `src/app/layout.tsx`, so every route renders with the same layout shell.
+
+### Usage examples
+
+- Root layout usage: `import { LayoutWrapper } from "@/components";`
+- UI usage: `import { Button } from "@/components";`
+
+Example:
+
+```tsx
+import { Button } from "@/components";
+
+export default function Example() {
+  return (
+    <div className="space-y-4">
+      <Button label="Primary" onClick={() => {}} />
+      <Button label="Secondary" variant="secondary" />
+    </div>
+  );
+}
+```
+
+### Props contracts
+
+- `Button`
+  - `label: string` (required)
+  - `variant?: "primary" | "secondary"` (optional)
+  - Supports standard button props like `onClick`, `disabled`, and `type`.
+
+### Accessibility considerations
+
+- Semantic landmarks (`header`, `nav`, `aside`, `main`) provide predictable structure for assistive tech.
+- `nav` uses `aria-label="Primary"` and `aside` uses `aria-label="Sidebar"`.
+- Links and buttons include `focus-visible` outlines for keyboard navigation.
+
+### Visual testing (Storybook)
+
+Storybook is configured to preview components in isolation.
+
+```powershell
+npm install
+npm run storybook
+```
+
+Stories live next to components (example: `src/components/ui/Button.stories.tsx`).
+
+### Reflection
+
+- Reusable layout primitives reduce UI drift as routes grow.
+- Centralized components improve maintainability (one change updates everywhere).
+- Shared accessibility patterns (landmarks, focus styling) scale better than per-page fixes.
+
 **Project Overview**
 
 - **Stack:** Next.js 16 (TypeScript) with App Router and Tailwind CSS.
