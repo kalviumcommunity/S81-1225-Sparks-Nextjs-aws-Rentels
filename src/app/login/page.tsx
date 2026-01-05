@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   async function handleLogin() {
-    const toastId = toast.loading('Logging in...');
+    const toastId = toast.loading("Logging in...");
 
     try {
       // Simulate API call
@@ -19,7 +19,7 @@ export default function LoginPage() {
       document.cookie =
         "token=mock.jwt.token; Path=/; Max-Age=3600; SameSite=Lax";
 
-      toast.success('Login successful! Redirecting...', {
+      toast.success("Login successful! Redirecting...", {
         id: toastId,
       });
 
@@ -28,10 +28,10 @@ export default function LoginPage() {
         router.push("/dashboard");
       }, 500);
     } catch (err) {
-      toast.error('Login failed. Please try again.', {
+      toast.error("Login failed. Please try again.", {
         id: toastId,
       });
-      console.error('Login error:', err);
+      console.error("Login error:", err);
     }
   }
 

@@ -7,11 +7,7 @@ import Sidebar from "./Sidebar";
 import { ThemeToggle } from "../ThemeToggle";
 import { useUI } from "@/hooks/useUI";
 
-export default function LayoutWrapper({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function LayoutWrapper({ children }: { children: ReactNode }) {
   const { sidebarOpen } = useUI();
 
   return (
@@ -24,11 +20,7 @@ export default function LayoutWrapper({
       <Header />
       <div className="mx-auto flex w-full max-w-6xl flex-1">
         {sidebarOpen ? <Sidebar /> : null}
-        <main
-          id="main"
-          className="flex-1 bg-white p-6"
-          role="main"
-        >
+        <main id="main" className="flex-1 bg-white p-6" role="main">
           {children}
         </main>
       </div>

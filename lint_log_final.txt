@@ -1,0 +1,70 @@
+﻿
+> s81-1225-sparks-nextjs-aws-rentels@0.1.0 lint
+> eslint
+
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\prisma\seed.ts
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\scripts\test-performance.ts
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\scripts\test-prisma.mjs
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\scripts\test-transaction.ts
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\app\contact\page.tsx
+  57:29  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\app\examples\delete-modal\page.tsx
+  178:23  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  178:30  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  180:23  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  180:30  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  180:50  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  180:58  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\app\users\page.tsx
+  24:7  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\components\ui\FormInput.tsx
+   2:27  warning  'FieldError' is defined but never used    @typescript-eslint/no-unused-vars
+  15:29  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\components\ui\Modal.tsx
+  106:9  error  Strings must use doublequote  quotes
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\context\AuthContext.tsx
+  26:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  33:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\context\ThemeProvider.tsx
+  46:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\context\ThemeProvider.tsx:46:5
+  44 |
+  45 |     const initialTheme = storedTheme || systemTheme;
+> 46 |     setThemeState(initialTheme);
+     |     ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  47 |     applyTheme(initialTheme);
+  48 |   }, []);
+  49 |  react-hooks/set-state-in-effect
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\context\UIContext.tsx
+  30:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  37:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+C:\Users\MAHIL MITHRAN\OneDrive\Desktop\S81-1225-Sparks-Nextjs-aws-Rentels\src\lib\logger.ts
+  1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+Γ£û 21 problems (10 errors, 11 warnings)
+  1 error and 10 warnings potentially fixable with the `--fix` option.
+

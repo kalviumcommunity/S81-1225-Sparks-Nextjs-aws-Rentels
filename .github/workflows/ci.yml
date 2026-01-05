@@ -18,11 +18,9 @@ jobs:
         with:
           node-version: "20"
       - name: Install dependencies
-        working-directory: s81-1225-sparks-nextjs-aws-rentels
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
       - name: Run ESLint
-        working-directory: s81-1225-sparks-nextjs-aws-rentels
         run: npm run lint
 
   build:
@@ -36,11 +34,9 @@ jobs:
         with:
           node-version: "20"
       - name: Install dependencies
-        working-directory: s81-1225-sparks-nextjs-aws-rentels
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
       - name: Build app
-        working-directory: s81-1225-sparks-nextjs-aws-rentels
         run: npm run build
 
   tests:
@@ -54,9 +50,7 @@ jobs:
         with:
           node-version: "20"
       - name: Install dependencies
-        working-directory: s81-1225-sparks-nextjs-aws-rentels
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
       - name: Run tests (if present)
-        working-directory: s81-1225-sparks-nextjs-aws-rentels
         run: npm run test --if-present

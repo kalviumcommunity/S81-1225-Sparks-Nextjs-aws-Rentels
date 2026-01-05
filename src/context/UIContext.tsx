@@ -40,7 +40,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<UIContextValue>(
     () => ({ theme, toggleTheme, sidebarOpen, toggleSidebar }),
-    [theme, toggleTheme, sidebarOpen, toggleSidebar],
+    [theme, toggleTheme, sidebarOpen, toggleSidebar]
   );
 
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>;
