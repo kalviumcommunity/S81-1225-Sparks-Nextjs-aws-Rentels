@@ -129,6 +129,78 @@ Stories live next to components (example: `src/components/ui/Button.stories.tsx`
 - Centralized components improve maintainability (one change updates everywhere).
 - Shared accessibility patterns (landmarks, focus styling) scale better than per-page fixes.
 
+---
+
+## State Management (Context + Hooks)
+
+This project includes a lightweight global state setup using React Context API and custom hooks for:
+
+- **Auth state** (demo): current user + login/logout
+- **UI state**: theme mode + sidebar open/close
+
+### Folder structure
+
+```
+src/
+  context/
+    AuthContext.tsx
+    UIContext.tsx
+  hooks/
+    useAuth.ts
+    useUI.ts
+```
+
+### State flow (high level)
+
+`AuthProvider/UIProvider → Context Value → useAuthContext/useUIContext → useAuth/useUI → Components`
+
+Providers are mounted globally in `src/app/layout.tsx`, so any client component can access state.
+
+### Code snippets
+
+Auth hook:
+
+```ts
+import { useAuthContext } from "@/context/AuthContext";
+
+export function useAuth() {
+  const { user, login, logout } = useAuthContext();
+  return { isAuthenticated: Boolean(user), user, login, logout };
+}
+```
+
+UI hook:
+
+```ts
+import { useUIContext } from "@/context/UIContext";
+
+export function useUI() {
+  const { theme, toggleTheme, sidebarOpen, toggleSidebar } = useUIContext();
+  return { theme, toggleTheme, sidebarOpen, toggleSidebar };
+}
+```
+
+### Evidence (console logs)
+
+These context actions log state transitions for quick verification in DevTools:
+
+- `User logged in: KalviumUser`
+- `User logged out`
+- `Theme toggled`
+- `Sidebar toggled`
+
+### Debugging & performance notes
+
+- Inspect provider values via React DevTools → Components.
+- Context changes re-render consumers; keep provider values memoized and callbacks stable.
+- For larger UI state, consider `useReducer` to make state transitions predictable.
+
+### Reflection
+
+- Context removes prop-drilling and keeps shared logic centralized.
+- Custom hooks (`useAuth`, `useUI`) keep components declarative and consistent.
+- Overusing a single “mega-context” can cause unnecessary re-renders; split contexts by concern.
+
 **Project Overview**
 
 - **Stack:** Next.js 16 (TypeScript) with App Router and Tailwind CSS.
