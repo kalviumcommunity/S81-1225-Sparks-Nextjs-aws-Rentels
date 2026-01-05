@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { contactSchema, ContactFormData } from "@/lib/schemas/contactSchema";
 import FormInput from "@/components/ui/FormInput";
+import { toast } from "@/lib/toast";
 
 /**
  * Contact Form Page
@@ -24,10 +25,26 @@ export default function ContactPage() {
         resolver: zodResolver(contactSchema),
     });
 
-    const onSubmit = (data: ContactFormData) => {
-        console.log("Contact Form Submitted:", data);
-        alert("Message Sent Successfully! We'll get back to you soon.");
-        reset(); // Reset form after successful submission
+    const onSubmit = async (data: ContactFormData) => {
+        const toastId = toast.loading('Sending your message...');
+
+        try {
+            // Simulate API call
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+
+            console.log("Contact Form Submitted:", data);
+
+            toast.success("Message sent successfully! We'll get back to you soon.", {
+                id: toastId,
+            });
+
+            reset(); // Reset form after successful submission
+        } catch (error) {
+            toast.error('Failed to send message. Please try again.', {
+                id: toastId,
+            });
+            console.error('Contact form error:', error);
+        }
     };
 
     return (
@@ -77,8 +94,8 @@ export default function ContactPage() {
                             placeholder="Tell us what's on your mind..."
                             rows={5}
                             className={`w-full border p-2 rounded focus:outline-none focus:ring-2 transition-colors resize-none ${errors.message
-                                    ? "border-red-500 focus:ring-red-500"
-                                    : "border-gray-300 focus:ring-green-500"
+                                ? "border-red-500 focus:ring-red-500"
+                                : "border-gray-300 focus:ring-green-500"
                                 }`}
                         />
                         {errors.message && (

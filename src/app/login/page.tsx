@@ -2,16 +2,37 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "@/lib/toast";
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
-  function handleLogin() {
-    // Demo-only: set a mock token cookie (real apps should use an HttpOnly cookie).
-    document.cookie =
-      "token=mock.jwt.token; Path=/; Max-Age=3600; SameSite=Lax";
-    router.push("/dashboard");
+  async function handleLogin() {
+    const toastId = toast.loading('Logging in...');
+
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Demo-only: set a mock token cookie (real apps should use an HttpOnly cookie).
+      document.cookie =
+        "token=mock.jwt.token; Path=/; Max-Age=3600; SameSite=Lax";
+
+      toast.success('Login successful! Redirecting...', {
+        id: toastId,
+      });
+
+      // Small delay to show success toast before redirect
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 500);
+    } catch (err) {
+      toast.error('Login failed. Please try again.', {
+        id: toastId,
+      });
+      console.error('Login error:', err);
+    }
   }
 
   return (

@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import { LayoutWrapper } from "@/components";
 import { AuthProvider } from "@/context/AuthContext";
 import { UIProvider } from "@/context/UIContext";
+import { toastConfig } from "@/lib/toast";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,6 +37,16 @@ export default function RootLayout({
             <LayoutWrapper>{children}</LayoutWrapper>
           </UIProvider>
         </AuthProvider>
+        <Toaster
+          position={toastConfig.position}
+          toastOptions={{
+            duration: toastConfig.duration,
+            style: toastConfig.style,
+            success: toastConfig.success,
+            error: toastConfig.error,
+            loading: toastConfig.loading,
+          }}
+        />
       </body>
     </html>
   );
