@@ -177,7 +177,10 @@ export default function DeleteConfirmExample() {
           <ol className="list-inside list-decimal space-y-1 text-sm text-blue-800">
             <li>Click &quot;Delete&quot; button → Modal opens</li>
             <li>Press Esc or click backdrop → Modal closes</li>
-            <li>Click &quot;Delete&quot; again, then click &quot;Confirm&quot; → Loader appears</li>
+            <li>
+              Click &quot;Delete&quot; again, then click &quot;Confirm&quot; →
+              Loader appears
+            </li>
             <li>After 2 seconds → Success toast shows, modal closes</li>
             <li>Item is removed from the list</li>
           </ol>

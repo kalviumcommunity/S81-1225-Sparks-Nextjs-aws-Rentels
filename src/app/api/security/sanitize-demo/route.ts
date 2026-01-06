@@ -11,7 +11,8 @@ export async function POST(req: Request) {
   }
 
   const commentRaw = (body as { comment?: unknown } | null)?.comment;
-  const before = typeof commentRaw === "string" ? commentRaw : String(commentRaw ?? "");
+  const before =
+    typeof commentRaw === "string" ? commentRaw : String(commentRaw ?? "");
   const after = sanitizePlainText(commentRaw);
 
   if (before.length > 5000) {

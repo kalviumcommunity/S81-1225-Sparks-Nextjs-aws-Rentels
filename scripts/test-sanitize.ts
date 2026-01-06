@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 import { sanitizePlainText } from "../src/lib/sanitize";
 
 const examples = [

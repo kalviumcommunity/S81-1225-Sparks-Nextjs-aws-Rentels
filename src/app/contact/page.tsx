@@ -93,10 +93,11 @@ export default function ContactPage() {
               aria-describedby={errors.message ? "message-error" : undefined}
               placeholder="Tell us what's on your mind..."
               rows={5}
-              className={`w-full border p-2 rounded focus:outline-none focus:ring-2 transition-colors resize-none ${errors.message
+              className={`w-full border p-2 rounded focus:outline-none focus:ring-2 transition-colors resize-none ${
+                errors.message
                   ? "border-red-500 focus:ring-red-500"
                   : "border-gray-300 focus:ring-green-500"
-                }`}
+              }`}
             />
             {errors.message && (
               <p

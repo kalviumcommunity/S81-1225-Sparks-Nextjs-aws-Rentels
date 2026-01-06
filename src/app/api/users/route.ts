@@ -134,7 +134,10 @@ export async function POST(req: Request) {
       ...raw,
       name: sanitizePlainText(raw.name),
       email: normalizeEmail(raw.email),
-      phone: raw.phone === null || raw.phone === undefined ? raw.phone : sanitizePlainText(raw.phone),
+      phone:
+        raw.phone === null || raw.phone === undefined
+          ? raw.phone
+          : sanitizePlainText(raw.phone),
     });
 
     const created = await prisma.user.create({

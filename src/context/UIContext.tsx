@@ -27,14 +27,14 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const toggleTheme = useCallback(() => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
     // Demo-only log for the lesson.
-    // eslint-disable-next-line no-console
+
     console.log("Theme toggled");
   }, []);
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
     // Demo-only log for the lesson.
-    // eslint-disable-next-line no-console
+
     console.log("Sidebar toggled");
   }, []);
 

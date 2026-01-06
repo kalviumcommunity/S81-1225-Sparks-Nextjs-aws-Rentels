@@ -9,7 +9,11 @@ import {
   type RbacResource,
 } from "@/config/roles";
 
-export function can(role: unknown, resource: RbacResource, action: RbacAction): boolean {
+export function can(
+  role: unknown,
+  resource: RbacResource,
+  action: RbacAction
+): boolean {
   const normalized = normalizeRole(role);
   if (!normalized) return false;
   return ROLE_PERMISSIONS[normalized][resource].includes(action);
@@ -23,7 +27,7 @@ export function logDecision(params: {
 }) {
   const roleLabel = normalizeRole(params.role) ?? "UNKNOWN";
   // Demo-friendly audit log (server-side).
-  // eslint-disable-next-line no-console
+
   console.log(
     `[RBAC] role=${roleLabel} action=${params.action} resource=${params.resource} decision=${
       params.allowed ? "ALLOWED" : "DENIED"
