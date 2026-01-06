@@ -2422,3 +2422,74 @@ We implemented a custom TailwindCSS v4 configuration in globals.css using the @t
 - **Contrast**: All colors meet WCAG AA standards.
 - **Focus States**: Visible focus rings for keyboard navigation.
 - **Reduced Motion**: Respects system preferences (though we added smooth transitions for theme switching).
+
+---
+
+## Cloud Database Configuration (RDS / Azure SQL)
+
+This project supports managed PostgreSQL databases on AWS RDS or Azure Database for PostgreSQL.
+
+### 1. Provisioning
+
+**AWS RDS**
+1.  Go to **AWS Console** -> **RDS** -> **Create Database**.
+2.  Choose **Standard Create** -> **PostgreSQL**.
+3.  Template: **Free Tier** (or Dev/Test).
+4.  Settings:
+    *   DB Instance ID: `nextjs-db`
+    *   Master Username: `admin` (or your choice)
+    *   Master Password: *StrongPassword*
+5.  Connectivity:
+    *   **Public Access**: Yes (for development/testing from local machine).
+    *   VPC Security Group: Create new or select existing (ensure port 5432 is open).
+6.  Create Database and wait.
+
+**Azure Database for PostgreSQL**
+1.  Go to **Azure Portal** -> **Create a resource** -> **Azure Database for PostgreSQL**.
+2.  Select **Flexible Server** (recommended).
+3.  Basics:
+    *   Server name: `nextjs-db-server`
+    *   Admin username: `adminuser`
+    *   Password: *StrongPassword*
+    *   Compute + Storage: Burstable B1ms (Free tier eligible).
+4.  Networking:
+    *   Connectivity method: Public access (allowed IP addresses).
+    *   **Allow public access from any Azure service**: Yes.
+    *   **Add current client IP address**: Yes.
+5.  Review + Create.
+
+### 2. Network Configuration
+*   Ensure your local IP is whitelisted in the Security Group (AWS) or Firewall Rules (Azure) for port 5432.
+
+### 3. Connection
+Update your `.env.local` file with the connection string:
+
+```bash
+DATABASE_URL="postgresql://<username>:<password>@<hostname>:5432/<dbname>"
+```
+
+### 4. Verification
+We have implemented a verification route at `/api/db-check`.
+
+1.  Start the dev server: `npm run dev`
+2.  Visit: `http://localhost:3000/api/db-check`
+3.  Expected JSON response:
+    ```json
+    {
+      "status": "success",
+      "message": "Database connection established",
+      "serverTime": "2024-03-20T10:00:00.000Z"
+    }
+    ```
+
+**Admin Client Verification**:
+Use pgAdmin or `psql`:
+```bash
+psql -h <hostname> -U <username> -d <dbname>
+```
+
+### 5. Backups & Scaling (Reflection)
+*   **Backups**: AWS RDS and Azure provide automated daily backups. Enable 7-day retention for production.
+*   **Scaling**: Use Read Replicas for read-heavy workloads. Vertically scale instance size for write constraints.
+*   **Security**: For production, disable Public Access and use a VPN or Bastion Host (AWS) / Private Link (Azure).
+
