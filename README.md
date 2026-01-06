@@ -491,16 +491,36 @@ Sanitization/normalization happens **before** Zod parsing and before storing val
 - Database access uses Prisma queries (e.g. `findUnique`, `findMany`, `create`, `update`). These are parameterized by design.
 - The codebase avoids building dynamic SQL strings from untrusted input.
 
-### OWASP-ish security headers
+### Security Headers
 
-Baseline security headers are set in `src/middleware.ts`:
+Security headers are now robustly configured in `next.config.ts` to ensure they are applied globally to all responses, including static assets and API routes.
 
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
-- `Strict-Transport-Security` (production)
-- `Content-Security-Policy` (production; conservative defaults)
+- **Strict-Transport-Security (HSTS):** `max-age=63072000; includeSubDomains; preload` - Forces browsers to use HTTPS for 2 years.
+- **Content-Security-Policy (CSP):** Restricts sources for scripts, styles, and images to trusted domains (`'self'`, `apis.google.com`, etc.) to prevent XSS.
+- **X-Content-Type-Options:** `nosniff` - Prevents MIME type sniffing.
+- **X-Frame-Options:** `DENY` - Prevents clickjacking by disallowing embedding in iframes.
+- **Referrer-Policy:** `strict-origin-when-cross-origin` - Controls referrer information sent to other sites.
+- **Permissions-Policy:** Disables sensitive features like camera, microphone, and geolocation by default.
+- **CORS (Cross-Origin Resource Sharing):** Configured for `/api/*` routes to allow controlled access from external domains (currently wide open `*` for development, but should be restricted in production).
+
+**Configuration Snippet (`next.config.ts`):**
+
+```typescript
+const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; ..." },
+          // ... other headers
+        ],
+      },
+    ];
+  },
+};
+```
 
 ### Before/after evidence
 
