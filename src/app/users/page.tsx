@@ -26,6 +26,10 @@ export default function UsersPage() {
     }
   }, [cache, data]);
 
+  if (error) {
+    throw error;
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-12">
       <header className="flex flex-col gap-2">
@@ -35,10 +39,21 @@ export default function UsersPage() {
         </p>
       </header>
 
-      {error ? (
-        <p className="text-sm text-red-600">Failed to load users.</p>
+      {isLoading ? (
+        <div className="animate-pulse space-y-3">
+          {["one", "two", "three"].map((key) => (
+            <div
+              key={key}
+              className="rounded border border-black/10 bg-white p-4"
+            >
+              <div className="space-y-2">
+                <div className="h-5 w-1/3 rounded bg-zinc-200" />
+                <div className="h-4 w-2/3 rounded bg-zinc-200" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : null}
-      {isLoading ? <p className="text-sm">Loading...</p> : null}
 
       {data ? (
         <ul className="flex flex-col gap-3">

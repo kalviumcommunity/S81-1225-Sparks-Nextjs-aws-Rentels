@@ -8,9 +8,19 @@ type Props = {
 export default async function UserProfilePage({ params }: Props) {
   const { id } = params;
 
+  const delayMs = Number(process.env.NEXT_PUBLIC_FETCH_DELAY_MS ?? "0");
+  if (delayMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
   // Basic validation to demonstrate 404 behavior for invalid params.
   if (!/^\d+$/.test(id)) {
     notFound();
+  }
+
+  // Demo-only hook to validate the route-level error boundary.
+  if (id === "999999") {
+    throw new Error("Simulated error loading user profile");
   }
 
   const user = { id, name: `User ${id}` };
