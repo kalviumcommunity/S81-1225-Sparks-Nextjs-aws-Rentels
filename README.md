@@ -383,6 +383,73 @@ Add your captures:
 - Short access-token lifetimes reduce blast radius of token replay.
 - Refresh token rotation adds resilience: stolen refresh tokens are harder to reuse silently.
 
+---
+
+## Role-Based Access Control (RBAC)
+
+RBAC ensures users can only perform actions that match their assigned role. This app enforces RBAC **server-side in API routes** (never only in the UI) and also uses the role to **conditionally render UI actions**.
+
+### Roles & permissions
+
+| Role | Users API | Admin API | Files API |
+|------|----------:|----------:|----------:|
+| `ADMIN` | create/read/update/delete | create/read/update/delete | create/read/update/delete |
+| `OWNER` | create/read/update | (none) | create/read |
+| `CUSTOMER` | read | (none) | create/read |
+
+Policy source:
+
+- `src/config/roles.ts`
+
+### Policy evaluation logic
+
+RBAC checks are evaluated as:
+
+`can(role, resource, action) → boolean`
+
+Server-side enforcement helper:
+
+- `src/lib/rbac.ts` (`requirePermission(...)`)
+
+### Enforcement points
+
+- API routes
+  - `POST /api/users` requires `create` on `users`
+  - `GET /api/users` requires `read` on `users`
+  - `GET /api/admin` requires `read` on `admin`
+- UI
+  - The “Add user” UI is hidden unless the session role is `ADMIN` or `OWNER`.
+
+### Audit logs (evidence)
+
+Every allow/deny decision logs a line like:
+
+`[RBAC] role=OWNER action=create resource=users decision=ALLOWED`
+
+Capture screenshots/log evidence:
+
+- `public/screenshots/rbac-allowed.png`
+- `public/screenshots/rbac-denied.png`
+
+### Allow/deny test script (evidence)
+
+You can generate deterministic allow/deny logs without running the UI by executing:
+
+```powershell
+npm run rbac:test
+```
+
+This prints the same audit format used by the server helpers (example):
+
+`[RBAC] role=OWNER action=create resource=users decision=ALLOWED`
+
+### Reflection (scalability + auditing)
+
+- **Scales cleanly:** permissions are centralized in `src/config/roles.ts`, so adding a new resource/action is a single policy change.
+- **Server-side enforcement is authoritative:** UI checks are only for UX; API routes still enforce RBAC.
+- **Auditable by default:** every decision emits an explicit ALLOWED/DENIED log line to help debug and demonstrate access policy behavior.
+- **Next step for complex systems:** evolve from role → permission arrays to policy-based access (ABAC/PBAC), where checks can incorporate attributes like ownerId, tenantId, or resource state.
+
 **Project Overview**
 
 - **Stack:** Next.js 16 (TypeScript) with App Router and Tailwind CSS.

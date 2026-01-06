@@ -7,6 +7,7 @@ import { formatZodError, userCreateSchema } from "@/lib/schemas/userSchema";
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import redis, { invalidateCache } from "@/lib/redis";
+import { requirePermission } from "@/lib/rbac";
 
 function parsePagination(url: string) {
   const { searchParams } = new URL(url);
@@ -32,6 +33,15 @@ export async function GET(req: Request) {
   const auth = requireAuth(req);
   if (!auth.ok) {
     return auth.response;
+  }
+
+  const rbac = requirePermission({
+    payload: auth.payload,
+    action: "read",
+    resource: "users",
+  });
+  if (!rbac.ok) {
+    return rbac.response;
   }
 
   const pagination = parsePagination(req.url);
@@ -96,6 +106,20 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const auth = requireAuth(req);
+  if (!auth.ok) {
+    return auth.response;
+  }
+
+  const rbac = requirePermission({
+    payload: auth.payload,
+    action: "create",
+    resource: "users",
+  });
+  if (!rbac.ok) {
+    return rbac.response;
+  }
+
   let body: unknown;
   try {
     body = await req.json();
