@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signupSchema, SignupFormData } from "@/lib/schemas/signupSchema";
+import { signupSchema, type SignupInput } from "@/lib/schemas/authSchema";
 import FormInput from "@/components/ui/FormInput";
 import { toast } from "@/lib/toast";
 
@@ -21,18 +21,24 @@ export default function SignupPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<SignupFormData>({
+  } = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
   });
 
-  const onSubmit = async (data: SignupFormData) => {
+  const onSubmit = async (data: SignupInput) => {
     const toastId = toast.loading("Creating your account...");
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
 
-      console.log("Form Submitted:", data);
+      if (!res.ok) {
+        throw new Error("Failed to create account");
+      }
 
       toast.success(`Welcome, ${data.name}! Your account has been created.`, {
         id: toastId,
@@ -88,7 +94,7 @@ export default function SignupPage() {
             type="password"
             register={register}
             error={errors.password?.message}
-            placeholder="At least 6 characters"
+            placeholder="At least 8 characters"
           />
 
           <button

@@ -296,6 +296,93 @@ Add your captures to `public/screenshots/` and update the links below:
 - Success after retry
   - `public/screenshots/users-success.png`
 
+---
+
+## Secure JWT & Session Management
+
+This project uses a **short-lived access token** and a **long-lived refresh token** to keep sessions secure and smooth. The access token expires quickly (reducing impact if stolen), while the refresh token is stored securely and used to mint a new access token without forcing frequent logins.
+
+### JWT structure (concept)
+
+A JWT has three parts:
+
+`header.payload.signature`
+
+- **Header:** algorithm + token type
+- **Payload:** claims (e.g., user id, expiry)
+- **Signature:** integrity check (detects tampering)
+
+Important: JWTs are **encoded, not encrypted** — never store secrets (like passwords) in the payload.
+
+### Access vs Refresh tokens
+
+- **Access token**
+  - Lifetime: `15m`
+  - Purpose: authenticate API/page access
+  - Storage: HttpOnly cookie `accessToken`
+- **Refresh token**
+  - Lifetime: `7d`
+  - Purpose: rotate/renew access tokens after expiry
+  - Storage: HttpOnly cookie `refreshToken` + server-side record for rotation
+
+### Storage & security choices
+
+- Tokens are stored in **HttpOnly cookies** so they’re not readable by JavaScript (mitigates token theft via XSS).
+- `SameSite` is used to reduce CSRF risk:
+  - `accessToken`: `SameSite=Lax`
+  - `refreshToken`: `SameSite=Strict`
+- Refresh and logout endpoints also perform a basic **Origin/Host** same-origin check.
+
+### Refresh flow (401 → refresh → retry)
+
+1. Client calls a protected endpoint (e.g. `GET /api/users`).
+2. If the access token is expired, the server returns `401`.
+3. Client calls `POST /api/auth/refresh` (refresh cookie is sent automatically).
+4. Server validates refresh token, rotates it, and issues a new access token.
+5. Client retries the original request and succeeds.
+
+### Implementation files
+
+- JWT helpers: `src/lib/auth.ts`
+- Login sets cookies: `src/app/api/auth/login/route.ts`
+- Refresh token rotation: `src/app/api/auth/refresh/route.ts`
+- Logout clears cookies: `src/app/api/auth/logout/route.ts`
+- Middleware protection: `src/middleware.ts`
+- Auto-refresh fetch wrapper: `src/lib/fetcher.ts`
+
+### Database & migrations
+
+Refresh token rotation uses a database-backed allowlist (Prisma model `RefreshToken`). To run it locally:
+
+1. Ensure PostgreSQL is running and `DATABASE_URL` points to it (see `env.example`).
+2. Apply migrations:
+
+```powershell
+npx prisma migrate dev
+```
+
+3. Regenerate Prisma Client (usually done automatically by migrate dev):
+
+```powershell
+npx prisma generate
+```
+
+### Evidence to capture (screenshots/Postman)
+
+- Login response shows `Set-Cookie` for `accessToken` and `refreshToken`.
+- After waiting ~15 minutes (or by forcing expiry during testing), a protected call returns `401`, then refresh returns `200`, then the retry succeeds.
+
+Add your captures:
+
+- `public/screenshots/jwt-login-set-cookie.png`
+- `public/screenshots/jwt-refresh-flow.png`
+
+### Reflection
+
+- HttpOnly cookies significantly reduce exposure to XSS token theft.
+- Short access-token lifetimes reduce blast radius of token replay.
+- Refresh token rotation adds resilience: stolen refresh tokens are harder to reuse silently.
+
 **Project Overview**
 
 - **Stack:** Next.js 16 (TypeScript) with App Router and Tailwind CSS.

@@ -1,64 +1,90 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "@/lib/toast";
+import FormInput from "@/components/ui/FormInput";
+import { loginSchema, type LoginInput } from "@/lib/schemas/authSchema";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
 
-  async function handleLogin() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit = async (data: LoginInput) => {
     const toastId = toast.loading("Logging in...");
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Demo-only: set a mock token cookie (real apps should use an HttpOnly cookie).
-      document.cookie =
-        "token=mock.jwt.token; Path=/; Max-Age=3600; SameSite=Lax";
-
-      toast.success("Login successful! Redirecting...", {
-        id: toastId,
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
       });
 
-      // Small delay to show success toast before redirect
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 500);
+      if (!res.ok) {
+        throw new Error("Invalid credentials");
+      }
+
+      toast.success("Login successful! Redirecting...", { id: toastId });
+      router.push("/dashboard");
     } catch (err) {
-      toast.error("Login failed. Please try again.", {
-        id: toastId,
-      });
-      console.error("Login error:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Login failed. Please try again.",
+        { id: toastId }
+      );
     }
-  }
+  };
 
   return (
-    <main className="flex flex-col items-center gap-4 px-6 py-16">
-      <h1 className="text-2xl font-bold">Login</h1>
-      <p className="max-w-xl text-center text-sm text-zinc-600">
-        This lesson uses a mock login. Clicking “Login” stores a demo token in
-        cookies and routes you to the protected dashboard.
-      </p>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="w-full max-w-md">
+        <h1 className="mb-2 text-center text-3xl font-bold text-gray-800">
+          Login
+        </h1>
+        <p className="mb-6 text-center text-gray-600">
+          Sign in to access your dashboard and protected pages.
+        </p>
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="rounded-lg bg-white p-8 shadow-lg"
+          noValidate
+        >
+          <FormInput
+            label="Email Address"
+            name="email"
+            type="email"
+            register={register}
+            error={errors.email?.message}
+            placeholder="you@example.com"
+          />
 
-      <button
-        type="button"
-        onClick={() => {
-          try {
-            setError(null);
-            handleLogin();
-          } catch {
-            setError("Login failed. Please try again.");
-          }
-        }}
-        className="rounded bg-black px-4 py-2 text-white"
-      >
-        Login
-      </button>
+          <FormInput
+            label="Password"
+            name="password"
+            type="password"
+            register={register}
+            error={errors.password?.message}
+            placeholder="Your password"
+          />
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="mt-4 w-full rounded-lg bg-blue-600 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+          >
+            {isSubmitting ? "Logging in..." : "Login"}
+          </button>
+        </form>
+      </div>
     </main>
   );
 }

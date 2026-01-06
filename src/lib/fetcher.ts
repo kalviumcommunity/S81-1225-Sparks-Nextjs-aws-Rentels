@@ -1,27 +1,29 @@
 import type { ApiResponse } from "@/lib/responseHandler";
 
-function getCookieValue(name: string) {
-  if (typeof document === "undefined") return null;
-
-  const prefix = `${encodeURIComponent(name)}=`;
-  const parts = document.cookie.split(";").map((p) => p.trim());
-  const match = parts.find((p) => p.startsWith(prefix));
-  if (!match) return null;
-
-  return decodeURIComponent(match.slice(prefix.length));
-}
-
 export const fetcher = async <T>(url: string): Promise<T> => {
-  const token = getCookieValue("token");
-
   const delayMs = Number(process.env.NEXT_PUBLIC_FETCH_DELAY_MS ?? "0");
   if (delayMs > 0) {
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
 
-  const res = await fetch(url, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  });
+  const doFetch = () =>
+    fetch(url, {
+      credentials: "include",
+    });
+
+  let res = await doFetch();
+
+  // If access token expired, attempt a refresh once, then retry the request.
+  if (res.status === 401) {
+    const refresh = await fetch("/api/auth/refresh", {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (refresh.ok) {
+      res = await doFetch();
+    }
+  }
 
   if (!res.ok) {
     throw new Error("Failed to fetch data");
