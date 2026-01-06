@@ -7,6 +7,7 @@ import { getS3Config, getS3ObjectUrl } from "@/lib/s3";
 import { fileCreateSchema, formatZodError } from "@/lib/schemas/uploadSchema";
 import { getUploadConfig, isAllowedMimeType } from "@/lib/upload";
 import { ZodError } from "zod";
+import { sanitizeFileName } from "@/lib/sanitize";
 
 export async function POST(req: Request) {
   const auth = requireAuth(req);
@@ -20,7 +21,11 @@ export async function POST(req: Request) {
   }
 
   try {
-    const input = fileCreateSchema.parse(body);
+    const raw = body as Record<string, unknown>;
+    const input = fileCreateSchema.parse({
+      ...raw,
+      originalName: sanitizeFileName(raw.originalName),
+    });
 
     const { maxBytes, keyPrefix } = getUploadConfig();
 

@@ -16,6 +16,7 @@ import {
   isAllowedMimeType,
 } from "@/lib/upload";
 import { ZodError } from "zod";
+import { sanitizeFileName } from "@/lib/sanitize";
 
 export async function POST(req: Request) {
   const auth = requireAuth(req);
@@ -29,7 +30,11 @@ export async function POST(req: Request) {
   }
 
   try {
-    const input = uploadPresignSchema.parse(body);
+    const raw = body as Record<string, unknown>;
+    const input = uploadPresignSchema.parse({
+      ...raw,
+      fileName: sanitizeFileName(raw.fileName),
+    });
 
     const { maxBytes, presignTtlSeconds, keyPrefix } = getUploadConfig();
 

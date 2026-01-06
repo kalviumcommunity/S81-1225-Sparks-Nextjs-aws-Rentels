@@ -11,6 +11,7 @@ import {
 import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import { invalidateCache } from "@/lib/redis";
+import { normalizeEmail, sanitizePlainText } from "@/lib/sanitize";
 
 function parseId(idParam: string) {
   const id = Number(idParam);
@@ -77,9 +78,20 @@ async function updateUser(
   }
 
   try {
-    const validated = (mode === "put" ? userPutSchema : userPatchSchema).parse(
-      body
-    );
+    const raw = body as Record<string, unknown>;
+    const validated = (mode === "put" ? userPutSchema : userPatchSchema).parse({
+      ...raw,
+      ...(raw.name === undefined ? {} : { name: sanitizePlainText(raw.name) }),
+      ...(raw.email === undefined ? {} : { email: normalizeEmail(raw.email) }),
+      ...(raw.phone === undefined
+        ? {}
+        : {
+            phone:
+              raw.phone === null || raw.phone === undefined
+                ? raw.phone
+                : sanitizePlainText(raw.phone),
+          }),
+    });
 
     const updated = await prisma.user.update({
       where: { id },
