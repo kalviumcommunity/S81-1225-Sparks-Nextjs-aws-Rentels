@@ -667,6 +667,73 @@ cp .env.example .env.local
 npm run dev
 ```
 
+### ☁️ Environment Setup on Cloud (AWS Secrets Manager)
+
+For production, avoid storing secrets in `.env`. Use **AWS Secrets Manager** and either inject secrets into the container/runtime **at startup** (preferred) or fetch them **at runtime** with IAM.
+
+#### 1) Create a secret
+
+AWS Console → Secrets Manager → Store a new secret → **Other type of secret**.
+
+Store a JSON object matching the keys your app expects (example):
+
+```json
+{
+  "DATABASE_URL": "postgresql://admin:password@db.amazonaws.com:5432/nextjsdb",
+  "JWT_ACCESS_SECRET": "<strong-random-string>",
+  "JWT_REFRESH_SECRET": "<strong-random-string>",
+  "REDIS_URL": "redis://..."
+}
+```
+
+Name it (example): `nextjs/app-secrets` and copy its ARN.
+
+Set the runtime env:
+
+- `AWS_REGION`
+- `AWS_SECRETS_MANAGER_SECRET_ID` (name or ARN)
+
+#### 2) Grant least-privilege access
+
+Attach an IAM policy to your service role (ECS task role / EC2 instance profile) that only allows reading that secret:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:nextjs/app-secrets-*"
+    }
+  ]
+}
+```
+
+#### 3) Inject secrets at runtime (recommended)
+
+For ECS/containers, prefer **injecting Secrets Manager values as environment variables** at startup (so `DATABASE_URL` is available before Prisma initializes).
+
+This keeps secrets out of code and avoids fetching secrets on every request.
+
+#### 4) Runtime retrieval (verification route)
+
+This repo includes a server-only helper that can read a JSON secret using the AWS SDK:
+
+- Helper: `src/lib/awsSecrets.ts`
+
+And a verification endpoint that returns **keys only** (never values):
+
+- `GET /api/security/secrets-check` (requires `ADMIN` role via RBAC)
+
+This is useful to prove the app can retrieve secrets securely using its IAM role.
+
+#### Rotation strategy & access practices
+
+- Rotate sensitive secrets (DB password, JWT secrets, API keys) on a fixed schedule (e.g., monthly) or immediately after suspected exposure.
+- Use Secrets Manager rotation (Lambda) where supported (DB credentials), and redeploy/restart services so rotated values take effect.
+- Enforce least privilege (read-only secret access) and prefer managed identities/roles over long-lived access keys.
+
 ---
 
 ## 🐳 Docker & Compose Setup for Local Development
