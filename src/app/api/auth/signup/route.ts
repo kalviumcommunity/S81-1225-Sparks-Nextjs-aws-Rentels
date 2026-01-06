@@ -8,6 +8,7 @@ import { handleError } from "@/lib/errorHandler";
 import { sendError, sendSuccess } from "@/lib/responseHandler";
 import { signupSchema } from "@/lib/schemas/authSchema";
 import { formatZodError } from "@/lib/schemas/zodUtils";
+import { normalizeEmail, sanitizePlainText } from "@/lib/sanitize";
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -18,7 +19,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    const validated = signupSchema.parse(body);
+    const raw = body as Record<string, unknown>;
+    const validated = signupSchema.parse({
+      ...raw,
+      name: sanitizePlainText(raw.name),
+      email: normalizeEmail(raw.email),
+      // Password is intentionally not modified; validation enforces requirements.
+      password: raw.password,
+    });
 
     const existing = await prisma.user.findUnique({
       where: { email: validated.email },

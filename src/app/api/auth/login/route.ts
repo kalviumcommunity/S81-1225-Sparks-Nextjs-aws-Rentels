@@ -14,6 +14,7 @@ import {
 } from "@/lib/auth";
 import { loginSchema } from "@/lib/schemas/authSchema";
 import { formatZodError } from "@/lib/schemas/zodUtils";
+import { normalizeEmail } from "@/lib/sanitize";
 
 function sha256(value: string) {
   return crypto.createHash("sha256").update(value).digest("hex");
@@ -28,7 +29,12 @@ export async function POST(req: Request) {
   }
 
   try {
-    const validated = loginSchema.parse(body);
+    const raw = body as Record<string, unknown>;
+    const validated = loginSchema.parse({
+      ...raw,
+      email: normalizeEmail(raw.email),
+      password: raw.password,
+    });
 
     const user = await prisma.user.findUnique({
       where: { email: validated.email },

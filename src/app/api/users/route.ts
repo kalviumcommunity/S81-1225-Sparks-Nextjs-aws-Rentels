@@ -8,6 +8,7 @@ import { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import redis, { invalidateCache } from "@/lib/redis";
 import { requirePermission } from "@/lib/rbac";
+import { normalizeEmail, sanitizePlainText } from "@/lib/sanitize";
 
 function parsePagination(url: string) {
   const { searchParams } = new URL(url);
@@ -128,7 +129,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    const validated = userCreateSchema.parse(body);
+    const raw = body as Record<string, unknown>;
+    const validated = userCreateSchema.parse({
+      ...raw,
+      name: sanitizePlainText(raw.name),
+      email: normalizeEmail(raw.email),
+      phone: raw.phone === null || raw.phone === undefined ? raw.phone : sanitizePlainText(raw.phone),
+    });
 
     const created = await prisma.user.create({
       data: {

@@ -450,6 +450,84 @@ This prints the same audit format used by the server helpers (example):
 - **Auditable by default:** every decision emits an explicit ALLOWED/DENIED log line to help debug and demonstrate access policy behavior.
 - **Next step for complex systems:** evolve from role → permission arrays to policy-based access (ABAC/PBAC), where checks can incorporate attributes like ownerId, tenantId, or resource state.
 
+---
+
+## Input Sanitization & OWASP Compliance
+
+This app treats every external input (JSON body, query params, headers, cookies) as untrusted. It combines **sanitization + validation** to reduce XSS risk, and relies on **Prisma parameterization** (and avoiding raw SQL) to prevent SQL injection.
+
+### Sanitization utilities
+
+- Utility: `src/lib/sanitize.ts`
+- Library: `sanitize-html` (configured for **plain text** by stripping all HTML tags/attributes)
+
+Key functions:
+
+- `sanitizePlainText(value)` — removes HTML tags + normalizes whitespace
+- `normalizeEmail(value)` — trims + lowercases email (validation still enforced by Zod)
+- `sanitizeFileName(value)` — strips HTML from user-supplied filenames
+
+### Where sanitization is applied
+
+Sanitization/normalization happens **before** Zod parsing and before storing values:
+
+- Auth
+  - `src/app/api/auth/signup/route.ts` (name/email)
+  - `src/app/api/auth/login/route.ts` (email)
+- Users
+  - `src/app/api/users/route.ts` (name/email/phone)
+  - `src/app/api/users/[id]/route.ts` (name/email/phone)
+- Uploads / files
+  - `src/app/api/upload/route.ts` (`fileName`)
+  - `src/app/api/files/route.ts` (`originalName`)
+
+### Output encoding (XSS prevention)
+
+- React escapes strings by default (`<div>{value}</div>`), so rendering sanitized values stays safe.
+- The project avoids `dangerouslySetInnerHTML`. If rich HTML rendering is ever required, it must be sanitized with a strict allowlist.
+
+### SQL injection prevention
+
+- Database access uses Prisma queries (e.g. `findUnique`, `findMany`, `create`, `update`). These are parameterized by design.
+- The codebase avoids building dynamic SQL strings from untrusted input.
+
+### OWASP-ish security headers
+
+Baseline security headers are set in `src/middleware.ts`:
+
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- `Strict-Transport-Security` (production)
+- `Content-Security-Policy` (production; conservative defaults)
+
+### Before/after evidence
+
+Run a deterministic console demo:
+
+```powershell
+npm run sanitize:test
+```
+
+Or test via API (Postman/curl):
+
+`POST /api/security/sanitize-demo`
+
+Example body:
+
+```json
+{ "comment": "Hello <script>alert('Hacked!')</script> world" }
+```
+
+Expected behavior: response includes `before` and a sanitized `after` value with scripts/tags stripped.
+
+### Reflection & future hardening
+
+- Sanitization reduces XSS risk, but **validation + safe rendering** remain essential.
+- SQLi prevention comes from **parameterized DB access** and avoiding raw SQL.
+- Future improvements: strict CSP with nonces/hashes (remove `unsafe-*`), server-side rate limiting, centralized request validation middleware, and automated security scanning in CI.
+
 **Project Overview**
 
 - **Stack:** Next.js 16 (TypeScript) with App Router and Tailwind CSS.
