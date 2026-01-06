@@ -250,6 +250,52 @@ The users list uses `revalidateOnFocus: true` so data refreshes when the tab reg
 - Optimistic updates improve UX but require careful rollback/revalidation on failure.
 - Compared to raw `fetch`, SWR reduces boilerplate for caching, refetching, and shared state between components.
 
+---
+
+## Error & Loading States (App Router)
+
+Handling loading and error states prevents blank screens and unexpected crashes during async rendering. A good fallback UI makes the app feel reliable: users always know whether the app is still working (loading) or needs action (error + retry).
+
+### Implementation summary
+
+- **Route-level skeletons:** Next.js `loading.tsx` files provide a structured skeleton while a route segment is loading.
+- **Route-level error boundaries:** Next.js `error.tsx` files catch rendering/runtime errors in that route segment and display a friendly retry UI using `reset()`.
+- **Client fetch errors surfaced to the boundary:** `/users` throws the SWR error during render so the route error boundary can handle it consistently.
+
+### Where itâ€™s implemented
+
+- Users list route
+  - `src/app/users/loading.tsx`
+  - `src/app/users/error.tsx`
+  - `src/app/users/page.tsx`
+- User profile route
+  - `src/app/users/[id]/loading.tsx`
+  - `src/app/users/[id]/error.tsx`
+  - `src/app/users/[id]/page.tsx`
+
+### How to simulate states
+
+1) **Simulate slow loading**
+
+- Set `NEXT_PUBLIC_FETCH_DELAY_MS=2000` in `.env.local` (template in `env.example`).
+- Reload and navigate to `/users` (and `/users/1`) to see the skeleton state.
+
+2) **Simulate an error**
+
+- Users list: break the API temporarily (e.g., throttle/offline in DevTools or make `/api/users` return an error) and visit `/users`.
+- User profile: visit `/users/999999` to trigger a demo error and verify the route error boundary.
+
+### Evidence (screenshots/GIFs)
+
+Add your captures to `public/screenshots/` and update the links below:
+
+- Loading skeleton
+  - `public/screenshots/users-loading.png`
+- Error fallback UI
+  - `public/screenshots/users-error.png`
+- Success after retry
+  - `public/screenshots/users-success.png`
+
 **Project Overview**
 
 - **Stack:** Next.js 16 (TypeScript) with App Router and Tailwind CSS.
@@ -2094,7 +2140,7 @@ Open browser DevTools  Console:
 - **Compliance**: Follows industry best practices for secret management
 - **Developer Experience**: Clear documentation reduces onboarding friction
 
-A secure `.env` setup is a professional developer's safety net—it protects not just your app, but your entire team from data leaks and costly mistakes.
+A secure `.env` setup is a professional developer's safety netï¿½it protects not just your app, but your entire team from data leaks and costly mistakes.
 
 ---
 

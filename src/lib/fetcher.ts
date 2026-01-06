@@ -14,6 +14,11 @@ function getCookieValue(name: string) {
 export const fetcher = async <T>(url: string): Promise<T> => {
   const token = getCookieValue("token");
 
+  const delayMs = Number(process.env.NEXT_PUBLIC_FETCH_DELAY_MS ?? "0");
+  if (delayMs > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
   const res = await fetch(url, {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
