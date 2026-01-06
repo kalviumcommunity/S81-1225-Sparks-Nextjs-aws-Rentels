@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { can } from "@/lib/rbac";
 
 const JWT_SECRET =
   process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || "supersecretkey";
@@ -21,12 +22,6 @@ function getTokenFromHeader(authHeader: string | null) {
   if (scheme?.toLowerCase() !== "bearer" || !token) return null;
 
   return token;
-}
-
-function isAdminRole(role: unknown) {
-  if (!role) return false;
-  const normalized = String(role).toLowerCase();
-  return normalized === "admin" || normalized === "role.admin";
 }
 
 async function verifyJwt(token: string) {
@@ -88,7 +83,7 @@ export async function middleware(req: NextRequest) {
   try {
     const { payload } = await verifyJwt(token);
 
-    if (pathname.startsWith("/api/admin") && !isAdminRole(payload.role)) {
+    if (pathname.startsWith("/api/admin") && !can(payload.role, "admin", "read")) {
       return NextResponse.json(
         { success: false, message: "Access denied" },
         { status: 403 }

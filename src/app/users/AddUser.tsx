@@ -1,11 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { mutate } from "swr";
+import useSWR, { mutate } from "swr";
 
 import { Button } from "@/components";
+import { fetcher } from "@/lib/fetcher";
 
 const USERS_KEY = "/api/users?page=1&limit=10";
+
+type MePayload = {
+  id: number;
+  email: string;
+  role: string | null;
+};
 
 type UsersListPayload = {
   page: number;
@@ -28,11 +35,16 @@ function makeTempEmail(name: string) {
 }
 
 export default function AddUser() {
+  const { data: me } = useSWR<MePayload>("/api/auth/me", fetcher);
+  const canCreateUser = me?.role === "ADMIN" || me?.role === "OWNER";
+
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function addUser() {
+    if (!canCreateUser) return;
+
     const trimmed = name.trim();
     if (trimmed.length < 2) return;
 
@@ -49,7 +61,6 @@ export default function AddUser() {
       updatedAt: new Date().toISOString(),
     };
 
-    // Optimistic update (no revalidation yet)
     mutate(
       USERS_KEY,
       (current: UsersListPayload | undefined) => {
@@ -74,10 +85,9 @@ export default function AddUser() {
     try {
       const res = await fetch("/api/users", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          // NOTE: auth header is attached by middleware from the cookie token.
-          // For consistency with GET fetcher, we rely on cookie + middleware.
         },
         body: JSON.stringify({ name: trimmed, email: optimisticUser.email }),
       });
@@ -86,12 +96,10 @@ export default function AddUser() {
         throw new Error("Failed to add user");
       }
 
-      // Revalidate after update
       await mutate(USERS_KEY);
       setName("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to add user");
-      // Roll back to server truth
       await mutate(USERS_KEY);
     } finally {
       setIsSubmitting(false);
@@ -102,23 +110,31 @@ export default function AddUser() {
     <div className="mt-6 rounded border border-black/10 bg-zinc-50 p-4">
       <h2 className="text-sm font-semibold">Add user (optimistic)</h2>
 
-      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <input
-          className="w-full rounded border border-black/10 bg-white px-3 py-2 text-sm"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Enter user name"
-          aria-label="User name"
-        />
+      {!canCreateUser ? (
+        <p className="mt-2 text-sm text-zinc-600">
+          You don't have permission to create users.
+        </p>
+      ) : (
+        <>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <input
+              className="w-full rounded border border-black/10 bg-white px-3 py-2 text-sm"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter user name"
+              aria-label="User name"
+            />
 
-        <Button
-          label={isSubmitting ? "Adding…" : "Add User"}
-          onClick={addUser}
-          disabled={isSubmitting || name.trim().length < 2}
-        />
-      </div>
+            <Button
+              label={isSubmitting ? "Adding…" : "Add User"}
+              onClick={addUser}
+              disabled={isSubmitting || name.trim().length < 2}
+            />
+          </div>
 
-      {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
+          {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
+        </>
+      )}
     </div>
   );
 }
