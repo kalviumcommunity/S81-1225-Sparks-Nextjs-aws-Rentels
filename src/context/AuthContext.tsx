@@ -23,14 +23,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback((username: string) => {
     setUser(username);
     // Demo-only log for the lesson.
-    // eslint-disable-next-line no-console
+
     console.log("User logged in:", username);
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
     // Demo-only log for the lesson.
-    // eslint-disable-next-line no-console
+
     console.log("User logged out");
   }, []);
 

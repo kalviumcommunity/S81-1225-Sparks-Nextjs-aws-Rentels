@@ -21,7 +21,6 @@ export default function UsersPage() {
   useEffect(() => {
     // Demo-only: helps visualize cache keys in DevTools.
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.log("SWR cache keys:", Array.from(cache.keys()));
     }
   }, [cache, data]);

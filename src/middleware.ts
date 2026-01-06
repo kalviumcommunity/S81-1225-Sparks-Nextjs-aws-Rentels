@@ -89,7 +89,10 @@ export async function middleware(req: NextRequest) {
   try {
     const { payload } = await verifyJwt(token);
 
-    if (pathname.startsWith("/api/admin") && !can(payload.role, "admin", "read")) {
+    if (
+      pathname.startsWith("/api/admin") &&
+      !can(payload.role, "admin", "read")
+    ) {
       return NextResponse.json(
         { success: false, message: "Access denied" },
         { status: 403 }

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { config } from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";

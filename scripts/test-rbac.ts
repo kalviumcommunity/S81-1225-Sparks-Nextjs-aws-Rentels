@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 import {
   ROLE_PERMISSIONS,
   normalizeRole,
@@ -8,7 +6,11 @@ import {
   type RbacResource,
 } from "../src/config/roles";
 
-function can(role: unknown, resource: RbacResource, action: RbacAction): boolean {
+function can(
+  role: unknown,
+  resource: RbacResource,
+  action: RbacAction
+): boolean {
   const normalized = normalizeRole(role);
   if (!normalized) return false;
   return ROLE_PERMISSIONS[normalized][resource].includes(action);
@@ -30,7 +32,9 @@ function logDecision(params: {
 
 function assertEqual(name: string, actual: boolean, expected: boolean) {
   if (actual !== expected) {
-    throw new Error(`${name}: expected ${expected ? "ALLOWED" : "DENIED"}, got ${actual ? "ALLOWED" : "DENIED"}`);
+    throw new Error(
+      `${name}: expected ${expected ? "ALLOWED" : "DENIED"}, got ${actual ? "ALLOWED" : "DENIED"}`
+    );
   }
 }
 

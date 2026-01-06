@@ -2493,3 +2493,57 @@ psql -h <hostname> -U <username> -d <dbname>
 *   **Scaling**: Use Read Replicas for read-heavy workloads. Vertically scale instance size for write constraints.
 *   **Security**: For production, disable Public Access and use a VPN or Bastion Host (AWS) / Private Link (Azure).
 
+---
+
+## Object Storage Configuration (S3 / Azure Blob)
+
+This project uses AWS S3 (or Azure Blob) for secure file uploads via presigned URLs. This ensures high-performance uploads directly from the client to the cloud without burdening the server or exposing sensitive keys.
+
+### 1. Key Features
+*   **Direct-to-Cloud Uploads**: The client receives a temporary "presigned URL" from our API and uploads the file directly to S3.
+*   **Secure by Default**: Buckets are private. No public write access is allowed. Uploads are authenticated via the API.
+*   **Validation**:
+    *   **File Type**: Restricted to images (`jpeg`, `png`, `webp`, `gif`) and PDFs.
+    *   **Size**: Limit set to 5MB (configurable).
+
+### 2. Configuration Setup
+Ensure your `.env.local` contains valid credentials for your chosen provider.
+
+**AWS S3 Example:**
+```bash
+AWS_REGION="us-east-1"
+AWS_ACCESS_KEY_ID="your-access-key"
+AWS_SECRET_ACCESS_KEY="your-secret-key"
+AWS_BUCKET_NAME="sparks-rentals-storage"
+```
+
+**Azure Blob Example:**
+Use the connection string or SAS token logic in the backend (if implemented).
+
+### 3. Usage & Testing
+We have added a dedicated test page for validating uploads.
+
+1.  Navigate to [http://localhost:3000/test-upload](http://localhost:3000/test-upload)
+2.  (Ensure you are logged in, or use the dev mode mock token).
+3.  Select a file (e.g., `image.png`) and click **Upload**.
+4.  The app will:
+    *   Request a signed URL from `/api/upload`.
+    *   PUT the file to S3.
+    *   Display the uploaded image or file link.
+
+### 4. Security & Lifecycle Reflections
+*   **Presigned URLs**: These URLs expire quickly (default 60s). Even if intercepted, they have a short window of validity.
+*   **Least Privilege**: The IAM User/Role used by the Next.js app should ONLY have `s3:PutObject` (and `s3:GetObject` if needed) on the specific bucket.
+*   **CORS**: The S3 bucket must have a CORS configuration allowing `PUT` from `localhost:3000` (and your production domain).
+    ```json
+    [
+        {
+            "AllowedHeaders": ["*"],
+            "AllowedMethods": ["PUT", "GET"],
+            "AllowedOrigins": ["http://localhost:3000"],
+            "ExposeHeaders": []
+        }
+    ]
+    ```
+*   **Lifecycle Policies**: It is best practice to set up a lifecycle rule in S3 to automatically delete incomplete multipart uploads or move old objects to cheaper storage tiers (Glacier) if they are no longer needed (e.g., temporary uploads that were never confirmed).
+

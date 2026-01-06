@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 export type LogLevel = "info" | "error";
 
 function writeLog(level: LogLevel, message: string, meta?: unknown) {

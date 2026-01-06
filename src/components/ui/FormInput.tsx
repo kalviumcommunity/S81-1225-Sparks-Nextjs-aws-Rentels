@@ -1,4 +1,3 @@
-
 import { UseFormRegister } from "react-hook-form";
 
 /**
@@ -60,10 +59,11 @@ export default function FormInput({
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
         placeholder={placeholder}
-        className={`w-full border p-2 rounded focus:outline-none focus:ring-2 transition-colors ${error
-          ? "border-red-500 focus:ring-red-500"
-          : "border-gray-300 focus:ring-blue-500"
-          }`}
+        className={`w-full border p-2 rounded focus:outline-none focus:ring-2 transition-colors ${
+          error
+            ? "border-red-500 focus:ring-red-500"
+            : "border-gray-300 focus:ring-blue-500"
+        }`}
       />
       {error && (
         <p
