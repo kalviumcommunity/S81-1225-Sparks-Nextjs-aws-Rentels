@@ -2,10 +2,16 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
+const JWT_SECRET =
+  process.env.JWT_ACCESS_SECRET || process.env.JWT_SECRET || "supersecretkey";
 
 function getTokenFromCookie(req: NextRequest) {
-  return req.cookies.get("token")?.value ?? null;
+  return (
+    req.cookies.get("accessToken")?.value ??
+    // Backwards compat for older lessons
+    req.cookies.get("token")?.value ??
+    null
+  );
 }
 
 function getTokenFromHeader(authHeader: string | null) {
@@ -62,7 +68,11 @@ export async function middleware(req: NextRequest) {
   // Protected: /api/users/*, /api/admin/*
   // Uses Authorization: Bearer <token>
   // ---------------------------------------------------------------------------
-  const token = getTokenFromHeader(req.headers.get("authorization"));
+  const token =
+    getTokenFromHeader(req.headers.get("authorization")) ||
+    req.cookies.get("accessToken")?.value ||
+    // Backwards compat for older lessons
+    req.cookies.get("token")?.value;
   if (!token) {
     return NextResponse.json(
       { success: false, message: "Token missing" },
@@ -94,7 +104,7 @@ export async function middleware(req: NextRequest) {
   } catch {
     return NextResponse.json(
       { success: false, message: "Invalid or expired token" },
-      { status: 403 }
+      { status: 401 }
     );
   }
 }
